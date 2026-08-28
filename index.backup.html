@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shyaka Cup Entebbe — Player Directory</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f3f5f7;color:#17212b}
+header{background:#071b35;color:#fff;padding:30px 18px;text-align:center;border-bottom:5px solid #d39a28}
+header h1{margin:0;font-size:30px;letter-spacing:.5px}
+header p{margin:8px 0 0;opacity:.9}
+.wrap{max-width:1200px;margin:24px auto;padding:0 16px}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.stat{background:#fff;padding:12px 16px;border-radius:12px;box-shadow:0 3px 12px #0001;font-weight:700}
+.controls{background:#fff;padding:16px;border-radius:14px;box-shadow:0 3px 12px #0001;margin-bottom:20px;display:grid;grid-template-columns:2fr 1fr;gap:12px}
+input,select{width:100%;padding:12px;border:1px solid #d8dee5;border-radius:9px;font-size:15px;background:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:18px}
+.card{background:#fff;border-radius:15px;overflow:hidden;box-shadow:0 4px 16px #00000012}
+.photo{width:100%;height:250px;object-fit:cover;background:#e8ebee}
+.info{padding:14px 15px 16px}
+.name{font-size:18px;font-weight:700;margin-bottom:7px}
+.meta{font-size:14px;color:#5d6973;line-height:1.6}
+.button{display:inline-block;margin-top:12px;padding:9px 12px;border-radius:8px;background:#071b35;color:#fff;text-decoration:none;font-size:13px;font-weight:700;border:0;cursor:pointer}.adminbar{display:flex;justify-content:flex-end;margin-bottom:12px}.adminbtn{background:#d39a28;color:#071b35;border:0;padding:10px 15px;border-radius:9px;font-weight:800;cursor:pointer}.modal{display:none;position:fixed;inset:0;background:#0008;z-index:20;padding:20px;overflow:auto}.modal.show{display:flex;align-items:center;justify-content:center}.panel{background:#fff;width:min(680px,100%);border-radius:16px;padding:22px;box-shadow:0 12px 40px #0004}.panel h2{margin-top:0}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}.field.full{grid-column:1/-1}.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}.secondary{background:#eef1f4;color:#17212b}.danger{background:#9d2525}.notice{font-size:13px;color:#697681;background:#f6f7f8;padding:10px;border-radius:9px;margin-bottom:14px}@media(max-width:700px){.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}}
+.empty{display:none;text-align:center;background:#fff;border-radius:14px;padding:45px;color:#697681}
+footer{text-align:center;padding:30px;color:#7b8790;font-size:13px}
+@media(max-width:700px){.controls{grid-template-columns:1fr}header h1{font-size:24px}.photo{height:230px}}
+</style>
+</head>
+<body>
+<header>
+<h1>SHYAKA CUP ENTEBBE</h1>
+<p>Official Player Directory</p>
+</header>
+<div class="wrap">
+<div class="adminbar"><button class="adminbtn" id="adminOpen">⚙ Add / Manage Players</button></div>
+<div class="stats">
+<div class="stat" id="totalStat"></div>
+<div class="stat" id="villageStat"></div>
+</div>
+<div class="controls">
+<input id="search" type="search" placeholder="Search player name or player number...">
+<select id="village"><option value="">All villages</option></select>
+</div>
+<div id="players" class="grid"></div>
+<div id="empty" class="empty">No players found.</div>
+</div>
+
+<div class="modal" id="adminModal">
+  <div class="panel">
+    <h2>Player Management</h2>
+    <div class="notice">Players added here are saved to the shared online Shyaka Cup database. After saving, everyone who opens the directory can see the new player.</div>
+    <div class="formgrid">
+      <div class="field"><label>Player Name</label><input id="fName" placeholder="Full name"></div>
+      <div class="field"><label>Player Number</label><input id="fNumber" placeholder="e.g. BKIWV01"></div>
+      <div class="field"><label>Parish</label><input id="fParish" value="Kiwafu"></div>
+      <div class="field"><label>Village</label><input id="fVillage" placeholder="Village name"></div>
+      <div class="field full"><label>Player Photo</label><input id="fPhoto" type="file" accept="image/*"></div>
+      <div class="field full"><label>Player Licence</label><input id="fLicense" type="file" accept="image/*,.pdf"></div>
+    </div>
+    <div class="actions">
+      <button class="button secondary" id="adminClose">Close</button>
+      <button class="button" id="exportData">Export Players</button>
+      <button class="button" id="addPlayer">Add Player</button>
+    </div>
+  </div>
+</div>
+<footer>Shyaka Cup Entebbe • Player Directory</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script>
+const PLAYERS = [
+  {
+    "name": "Adama Benson",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC01",
+    "photo": "photos/BKIWC01.jpg",
+    "license": "licenses/BKIWC01.jpg"
+  },
+  {
+    "name": "Babalanda Dickson",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC02",
+    "photo": "photos/BKIWC02.jpg",
+    "license": "licenses/BKIWC02.jpg"
+  },
+  {
+    "name": "Mwebe Henry",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC03",
+    "photo": "photos/BKIWC03.jpg",
+    "license": "licenses/BKIWC03.jpg"
+  },
+  {
+    "name": "Kibirige Douglas",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC04",
+    "photo": "photos/BKIWC04.jpg",
+    "license": "licenses/BKIWC04.jpg"
+  },
+  {
+    "name": "Obedi Brain",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC05",
+    "photo": "photos/BKIWC05.jpg",
+    "license": "licenses/BKIWC05.jpg"
+  },
+  {
+    "name": "Kalyowa Benson",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC06",
+    "photo": "photos/BKIWC06.jpg",
+    "license": "licenses/BKIWC06.jpg"
+  },
+  {
+    "name": "Obegiu john Bosco",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC07",
+    "photo": "photos/BKIWC07.jpg",
+    "license": "licenses/BKIWC07.jpg"
+  },
+  {
+    "name": "Ssetuba Faruk",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC08",
+    "photo": "photos/BKIWC08.jpg",
+    "license": "licenses/BKIWC08.jpg"
+  },
+  {
+    "name": "Bright Talemwa",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC09",
+    "photo": "photos/BKIWC09.jpg",
+    "license": "licenses/BKIWC09.jpg"
+  },
+  {
+    "name": "Busingye Sam",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC10",
+    "photo": "photos/BKIWC10.jpg",
+    "license": "licenses/BKIWC10.jpg"
+  },
+  {
+    "name": "Edmond U. Jurugo",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC11",
+    "photo": "photos/BKIWC11.jpg",
+    "license": "licenses/BKIWC11.jpg"
+  },
+  {
+    "name": "Kasumba Farouk",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC12",
+    "photo": "photos/BKIWC12.jpg",
+    "license": "licenses/BKIWC12.jpg"
+  },
+  {
+    "name": "Malik Ali",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC13",
+    "photo": "photos/BKIWC13.jpg",
+    "license": "licenses/BKIWC13.jpg"
+  },
+  {
+    "name": "Mpanga Fahad",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC14",
+    "photo": "photos/BKIWC14.jpg",
+    "license": "licenses/BKIWC14.jpg"
+  },
+  {
+    "name": "Mubiru Swaibu",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC15",
+    "photo": "photos/BKIWC15.jpg",
+    "license": "licenses/BKIWC15.jpg"
+  },
+  {
+    "name": "Mugabi Zaake",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC16",
+    "photo": "photos/BKIWC16.jpg",
+    "license": "licenses/BKIWC16.jpg"
+  },
+  {
+    "name": "Shakul Mbawobye",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC17",
+    "photo": "photos/BKIWC17.jpg",
+    "license": "licenses/BKIWC17.jpg"
+  },
+  {
+    "name": "Ssentongo Ronald",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC18",
+    "photo": "photos/BKIWC18.jpg",
+    "license": "licenses/BKIWC18.jpg"
+  },
+  {
+    "name": "Tabu Steven",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC19",
+    "photo": "photos/BKIWC19.jpg",
+    "license": "licenses/BKIWC19.jpg"
+  },
+  {
+    "name": "Tenywa John",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC20",
+    "photo": "photos/BKIWC20.jpg",
+    "license": "licenses/BKIWC20.jpg"
+  },
+  {
+    "name": "Edmond U. Jurugo",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC21",
+    "photo": "photos/BKIWC21.jpg",
+    "license": "licenses/BKIWC21.jpg"
+  },
+  {
+    "name": "Amos Mwebaze",
+    "parish": "Kiwafu",
+    "village": "Kiwafu Central",
+    "number": "BKIWC22",
+    "photo": "photos/BKIWC22.jpg",
+    "license": "licenses/BKIWC22.jpg"
+  },
+  {
+    "name": "Alex Lukungu",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL01",
+    "photo": "photos/BKIWL01.jpg",
+    "license": "licenses/BKIWL01.jpg"
+  },
+  {
+    "name": "Bumurwa Wahab",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL02",
+    "photo": "photos/BKIWL02.jpg",
+    "license": "licenses/BKIWL02.jpg"
+  },
+  {
+    "name": "Kasumba Siraje",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL03",
+    "photo": "photos/BKIWL03.jpg",
+    "license": "licenses/BKIWL03.jpg"
+  },
+  {
+    "name": "Kaweesi Tonney",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL04",
+    "photo": "photos/BKIWL04.jpg",
+    "license": "licenses/BKIWL04.jpg"
+  },
+  {
+    "name": "Kissaku Jonathan M",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL05",
+    "photo": "photos/BKIWL05.jpg",
+    "license": "licenses/BKIWL05.jpg"
+  },
+  {
+    "name": "Mansour Addallah",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL06",
+    "photo": "photos/BKIWL06.jpg",
+    "license": "licenses/BKIWL06.jpg"
+  },
+  {
+    "name": "Matovu Jorum",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL07",
+    "photo": "photos/BKIWL07.jpg",
+    "license": "licenses/BKIWL07.jpg"
+  },
+  {
+    "name": "Mike Olemirothio",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL08",
+    "photo": "photos/BKIWL08.jpg",
+    "license": "licenses/BKIWL08.jpg"
+  },
+  {
+    "name": "Monday Ikieﬆ N",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL09",
+    "photo": "photos/BKIWL09.jpg",
+    "license": "licenses/BKIWL09.jpg"
+  },
+  {
+    "name": "Mukibi George",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL10",
+    "photo": "photos/BKIWL10.jpg",
+    "license": "licenses/BKIWL10.jpg"
+  },
+  {
+    "name": "Mussitwa Simon P",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL11",
+    "photo": "photos/BKIWL11.jpg",
+    "license": "licenses/BKIWL11.jpg"
+  },
+  {
+    "name": "Muwayira brian",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL12",
+    "photo": "photos/BKIWL12.jpg",
+    "license": "licenses/BKIWL12.jpg"
+  },
+  {
+    "name": "Nampagi Huzaifah",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL13",
+    "photo": "photos/BKIWL13.jpg",
+    "license": "licenses/BKIWL13.jpg"
+  },
+  {
+    "name": "Nyombi Akram",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL14",
+    "photo": "photos/BKIWL14.jpg",
+    "license": "licenses/BKIWL14.jpg"
+  },
+  {
+    "name": "Okada Auguﬆine",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL15",
+    "photo": "photos/BKIWL15.jpg",
+    "license": "licenses/BKIWL15.jpg"
+  },
+  {
+    "name": "Opio Tom",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL16",
+    "photo": "photos/BKIWL16.jpg",
+    "license": "licenses/BKIWL16.jpg"
+  },
+  {
+    "name": "Lutta jonah Bonny",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL17",
+    "photo": "photos/BKIWL17.jpg",
+    "license": "licenses/BKIWL17.jpg"
+  },
+  {
+    "name": "Mungu Jakisa",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL18",
+    "photo": "photos/BKIWL18.jpg",
+    "license": "licenses/BKIWL18.jpg"
+  },
+  {
+    "name": "Powel Jokony",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL19",
+    "photo": "photos/BKIWL19.jpg",
+    "license": "licenses/BKIWL19.jpg"
+  },
+  {
+    "name": "Ssekamanya Esau",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL20",
+    "photo": "photos/BKIWL20.jpg",
+    "license": "licenses/BKIWL20.jpg"
+  },
+  {
+    "name": "Ssebunya Mahaz",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL21",
+    "photo": "photos/BKIWL21.jpg",
+    "license": "licenses/BKIWL21.jpg"
+  },
+  {
+    "name": "Sserwanja Vincent",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL22",
+    "photo": "photos/BKIWL22.jpg",
+    "license": "licenses/BKIWL22.jpg"
+  },
+  {
+    "name": "Sunday Baba",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL23",
+    "photo": "photos/BKIWL23.jpg",
+    "license": "licenses/BKIWL23.jpg"
+  },
+  {
+    "name": "Twijuke Hilary",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL24",
+    "photo": "photos/BKIWL24.jpg",
+    "license": "licenses/BKIWL24.jpg"
+  },
+  {
+    "name": "Muwayira Eric",
+    "parish": "Kiwafu",
+    "village": "Lugonjo",
+    "number": "BKIWL25",
+    "photo": "photos/BKIWL25.jpg",
+    "license": "licenses/BKIWL25.jpg"
+  }
+];
+let storedPlayers = [];
+let remotePlayers = [];
+let supabaseClient = null;
+try {
+  if (window.SHYAKA_SUPABASE_URL && window.SHYAKA_SUPABASE_ANON_KEY && !window.SHYAKA_SUPABASE_URL.includes('YOUR_')) {
+    supabaseClient = window.supabase.createClient(window.SHYAKA_SUPABASE_URL, window.SHYAKA_SUPABASE_ANON_KEY);
+  }
+} catch(e) { console.warn('Supabase not configured', e); }
+try { storedPlayers = JSON.parse(localStorage.getItem('shyaka_players') || '[]'); } catch(e) {}
+let ALL_PLAYERS = [...PLAYERS, ...storedPlayers.filter(sp => !PLAYERS.some(p => p.number === sp.number))];
+const grid = document.getElementById('players');
+const empty = document.getElementById('empty');
+const search = document.getElementById('search');
+const village = document.getElementById('village');
+
+function refreshVillageOptions(){
+  const current = village.value;
+  village.innerHTML='<option value="">All villages</option>';
+  [...new Set(ALL_PLAYERS.map(p => p.village))].sort().forEach(v => {
+    const o=document.createElement('option'); o.value=v; o.textContent=v; village.appendChild(o);
+  });
+  village.value=current;
+}
+function updateStats(){
+  document.getElementById('totalStat').textContent = `${ALL_PLAYERS.length} Players`;
+  document.getElementById('villageStat').textContent = `${new Set(ALL_PLAYERS.map(p=>p.village)).size} Villages`;
+}
+function render() {
+  const q = search.value.toLowerCase().trim(); const v = village.value;
+  const list = ALL_PLAYERS.filter(p => (!v || p.village === v) && (`${p.name} ${p.number} ${p.village}`.toLowerCase().includes(q)));
+  grid.innerHTML=''; empty.style.display=list.length?'none':'block';
+  list.forEach(p => {
+    const card=document.createElement('article'); card.className='card';
+    card.innerHTML=`<img class="photo" src="${p.photo || ''}" alt="${p.name}" onerror="this.style.visibility='hidden'">
+      <div class="info"><div class="name">${escapeHtml(p.name)}</div><div class="meta"><strong>Village:</strong> ${escapeHtml(p.village)}<br><strong>Parish:</strong> ${escapeHtml(p.parish||'')}<br><strong>Player No.:</strong> ${escapeHtml(p.number)}</div>
+      ${p.license ? `<a class="button" href="${p.license}" target="_blank" rel="noopener">View License</a>` : ''}</div>`;
+    grid.appendChild(card);
+  });
+}
+function escapeHtml(x){return String(x??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+search.addEventListener('input', render); village.addEventListener('change', render);
+refreshVillageOptions(); updateStats(); render();
+
+async function loadRemotePlayers(){
+  if(!supabaseClient) return;
+  const {data,error}=await supabaseClient
+    .from('players')
+    .select('id,name,player_number,parish,village_id,photo_url,licence_url,created_at,villages(name)')
+    .order('created_at',{ascending:true});
+  if(error){console.warn('Online player load failed:',error); return;}
+  remotePlayers=(data||[]).map(p=>({
+    name:p.name,
+    number:p.player_number,
+    parish:p.parish||'',
+    village:p.villages?.name||'Unknown Village',
+    photo:p.photo_url||'',
+    license:p.licence_url||''
+  }));
+  ALL_PLAYERS=[...PLAYERS,...remotePlayers.filter(r=>!PLAYERS.some(p=>p.number===r.number))];
+  refreshVillageOptions(); updateStats(); render();
+}
+loadRemotePlayers();
+
+const adminModal=document.getElementById('adminModal');
+document.getElementById('adminOpen').onclick=async()=>{
+  if(supabaseClient){
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    if(!session){
+      const email=prompt('Admin email:'); if(!email) return;
+      const password=prompt('Admin password:'); if(!password) return;
+      const {error}=await supabaseClient.auth.signInWithPassword({email,password});
+      if(error){alert('Login failed: '+error.message); return;}
+    }
+  }
+  adminModal.classList.add('show');
+};
+document.getElementById('adminClose').onclick=()=>adminModal.classList.remove('show');
+function readFile(file){return new Promise((resolve,reject)=>{if(!file){resolve(null);return;}const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});}
+async function uploadFile(file,folder){
+  if(!file || !supabaseClient) return null;
+  const safe=(file.name||'file').replace(/[^a-zA-Z0-9._-]/g,'_');
+  const path=`${folder}/${Date.now()}_${safe}`;
+  const {error}=await supabaseClient.storage.from('player-files').upload(path,file,{upsert:false});
+  if(error) throw error;
+  const {data}=supabaseClient.storage.from('player-files').getPublicUrl(path);
+  return data.publicUrl;
+}
+document.getElementById('addPlayer').onclick=async()=>{
+  const name=fName.value.trim(), number=fNumber.value.trim(), parish=fParish.value.trim(), vill=fVillage.value.trim();
+  if(!name||!number||!vill){alert('Please enter player name, player number and village.');return;}
+  if(ALL_PLAYERS.some(p=>p.number.toLowerCase()===number.toLowerCase())){alert('That player number already exists.');return;}
+  const photoFile=fPhoto.files[0], licenseFile=fLicense.files[0];
+  try{
+    if(supabaseClient){
+      const {data:{session}}=await supabaseClient.auth.getSession(); if(!session){alert('Please log in as an admin first.');return;}
+      const {data:villageRow,error:villageError}=await supabaseClient.from('villages').select('id,name').ilike('name',vill).maybeSingle();
+      if(villageError) throw villageError;
+      if(!villageRow){alert('Village not found. Please add this village in Supabase first.');return;}
+      const photoUrl=await uploadFile(photoFile,'photos');
+      const licenseUrl=await uploadFile(licenseFile,'licenses');
+      const {error}=await supabaseClient.from('players').insert({name,player_number:number,parish,village_id:villageRow.id,photo_url:photoUrl,licence_url:licenseUrl});
+      if(error) throw error;
+      alert('Player added online successfully. Everyone scanning the QR code will see the player.');
+      fName.value='';fNumber.value='';fVillage.value='';fPhoto.value='';fLicense.value='';
+      await loadRemotePlayers();
+    } else {
+      const photo=await readFile(photoFile), license=await readFile(licenseFile);
+      const player={name,number,parish,village:vill,photo,license}; storedPlayers.push(player); localStorage.setItem('shyaka_players',JSON.stringify(storedPlayers));
+      alert('Saved on this device only. Add Supabase configuration to make it shared online.'); location.reload();
+    }
+  }catch(err){console.error(err);alert('Could not add player: '+(err.message||err));}
+};
+document.getElementById('exportData').onclick=()=>{const blob=new Blob([JSON.stringify(ALL_PLAYERS,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='shyaka-cup-players.json';a.click();URL.revokeObjectURL(a.href);};
+</script>
+</body>
+</html>
