@@ -1,37 +1,9 @@
-SHYAKA CUP ENTEBBE 2026 — COMPLETE TOURNAMENT APP v3
+SHYAKA CUP ADMIN SECURITY UPDATE
 
-PUBLIC FEATURES
-- Official tournament homepage with logo
-- Teams / villages and player directory
-- Full fixtures, results and automatic standings
-- Match Centre with match events
-- Top scorers / tournament statistics
-- Knockout stage
-- Tournament news
-- Gallery
-- Installable PWA for Android/iPhone home screen
-
-ADMIN FEATURES
-- Supabase admin login
-- Add/delete players with photo and licence
-- Add/update teams and team profile information
-- Edit fixtures
-- Enter results
-- Record goals, assists, cards, substitutions and Man of the Match
-- Publish/delete news
-- Upload/delete gallery items
-
-ONE-TIME DATABASE STEP
-Run supabase-complete-app.sql in Supabase SQL Editor. It is safe to run again.
-
-WEB DEPLOYMENT
-Upload/commit the files in this folder to the existing GitHub repository root. Vercel will redeploy the same project automatically.
-
-ANDROID / IOS READY
-This package includes Capacitor configuration. Later on a development computer:
-1. Install Node.js, Android Studio and/or Xcode.
-2. Run: npm install
-3. Android: npm run android:add
-4. iOS: npm run ios:add
-5. After changes: npm run sync
-The same Supabase backend is shared by web, Android and iOS.
+1. In Supabase SQL Editor run admin-security-lockdown.sql once.
+2. In GitHub upload the new index.html to the repository root, replacing the current index.html.
+3. Commit to main and allow Vercel to redeploy.
+4. Public users will no longer see Admin or Add Player buttons.
+5. Admins open the private login by adding ?admin=1 to the end of the normal website address.
+   Example: https://YOUR-DOMAIN.vercel.app/?admin=1
+6. Only accounts listed in public.admins can enter the Admin Centre.

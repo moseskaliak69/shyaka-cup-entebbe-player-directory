@@ -26,12 +26,12 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 @media(max-width:760px){.split{grid-template-columns:1fr}.gallery-card img{height:160px}}
 </style></head>
 <body>
-<header class="top"><div class="brand"><img class="crest" src="shyaka-cup-logo.jpg" alt="Shyaka Cup Entebbe logo"><div><h1>SHYAKA CUP ENTEBBE</h1><small>1st Edition • 2026 • Atasosola</small></div><div class="spacer"></div><button class="btn gold" id="adminBtn">Admin</button></div>
+<header class="top"><div class="brand"><img class="crest" src="shyaka-cup-logo.jpg" alt="Shyaka Cup Entebbe logo"><div><h1>SHYAKA CUP ENTEBBE</h1><small>1st Edition • 2026 • Atasosola</small></div><div class="spacer"></div><button class="btn gold" id="adminBtn" style="display:none">Admin Centre</button></div>
 <nav class="nav" id="nav"><button data-view="home" class="active">Home</button><button data-view="teams">Teams</button><button data-view="players">Players</button><button data-view="fixtures">Fixtures</button><button data-view="matchcentre">Match Centre</button><button data-view="results">Results</button><button data-view="standings">Standings</button><button data-view="stats">Statistics</button><button data-view="knockout">Knockout</button><button data-view="news">News</button><button data-view="gallery">Gallery</button></nav></header>
 <main class="shell">
 <section class="view active" id="view-home"><div class="hero"><div><span class="pill">OFFICIAL TOURNAMENT HUB</span><h2>Shyaka Cup Entebbe 2026</h2><p>Teams, registered players, fixtures, results, standings and tournament statistics in one mobile-friendly system.</p></div><div class="hero-badge"><b id="teamCountHero">24</b>Villages / Teams<br><small>Final • 20 Dec 2026</small></div></div><div class="kpis"><div class="kpi"><b id="teamCountHome">24</b><span>Teams</span></div><div class="kpi"><b>56</b><span>Fixture slots</span></div><div class="kpi"><b id="playerCountHome">47</b><span>Players currently loaded</span></div><div class="kpi"><b id="playedCount">0</b><span>Results entered</span></div></div><div class="panel"><div class="panel-head"><h3>Next Fixtures</h3></div><div class="panel-body table-wrap"><table><thead><tr><th>#</th><th>Date</th><th>Division/Ward</th><th>Match</th><th>Venue</th><th>Time</th></tr></thead><tbody id="nextFixtures"></tbody></table></div></div></section>
 <section class="view" id="view-teams"><div class="panel"><div class="panel-head"><h3>Teams / Villages</h3><span class="pill" id="teamsPill">24 teams</span></div><div class="panel-body"><div class="grid" id="teamGrid"></div></div></div></section>
-<section class="view" id="view-players"><div class="panel"><div class="panel-head"><h3>Registered Players</h3><div class="spacer"></div><button class="btn gold" id="addPlayerQuick">Add Player</button></div><div class="panel-body"><div class="controls"><input id="playerSearch" placeholder="Search player or number"><select id="playerTeam"><option value="">All teams</option></select><select id="playerParish"><option value="">All parishes</option></select></div><div class="grid" id="playerGrid"></div></div></div></section>
+<section class="view" id="view-players"><div class="panel"><div class="panel-head"><h3>Registered Players</h3><div class="spacer"></div><button class="btn gold" id="addPlayerQuick" style="display:none">Add Player</button></div><div class="panel-body"><div class="controls"><input id="playerSearch" placeholder="Search player or number"><select id="playerTeam"><option value="">All teams</option></select><select id="playerParish"><option value="">All parishes</option></select></div><div class="grid" id="playerGrid"></div></div></div></section>
 <section class="view" id="view-fixtures"><div class="panel"><div class="panel-head"><h3>Full Fixture</h3><span class="pill">46 scheduled + 10 knockout</span></div><div class="panel-body"><div class="controls"><input id="fixtureSearch" placeholder="Search team or venue"><select id="fixtureDivision"><option value="">All divisions</option></select><select id="fixtureStatus"><option value="">All stages</option><option value="group">Group/Ward</option><option value="knockout">Knockout</option></select></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Date</th><th>Division/Ward</th><th>Home</th><th>Away</th><th>Venue</th><th>Time</th><th>Result</th></tr></thead><tbody id="fixtureRows"></tbody></table></div></div></div></section>
 <section class="view" id="view-matchcentre"><div class="panel"><div class="panel-head"><h3>Match Centre</h3><span class="pill">Live & completed match details</span></div><div class="panel-body"><div class="controls"><select id="matchCentreSelect"></select><div></div><div></div></div><div id="matchCentreCard"></div></div></div></section>
 <section class="view" id="view-results"><div class="panel"><div class="panel-head"><h3>Results</h3></div><div class="panel-body table-wrap"><table><thead><tr><th>#</th><th>Date</th><th>Division/Ward</th><th>Home</th><th>Score</th><th>Away</th><th>Venue</th></tr></thead><tbody id="resultRows"></tbody></table><div id="noResults" class="notice">No match results have been entered yet.</div></div></div></section>
@@ -96,8 +96,39 @@ function initSelects(){const divisions=[...new Set(fixtures.slice(0,46).map(f=>f
 function openAdmin(){$('adminModal').classList.add('show');checkSession()} $('adminBtn').onclick=openAdmin;$('addPlayerQuick').onclick=openAdmin;$('closeAdmin').onclick=()=>$('adminModal').classList.remove('show');
 document.querySelectorAll('.admin-tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.admin-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.admin-pane').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('admin-'+b.dataset.admin).classList.add('active')});
 function renderAdminSummary(){$('adminTeams').textContent=currentTeams().length;$('adminPlayers').textContent=players.length;$('adminPlayed').textContent=fixtures.filter(f=>f.status==='completed').length;$('adminEvents').textContent=events.length;if($('adminStatusSummary'))$('adminStatusSummary').innerHTML=`${fixtures.filter(f=>f.status==='completed').length} of ${fixtures.length} fixture slots completed.<br>${events.filter(e=>e.event_type==='goal').length} goals recorded.<br>${players.length} players loaded.`}
-async function checkSession(){if(!db)return;let{data}=await db.auth.getSession();let on=!!data.session;$('loginBox').style.display=on?'none':'block';$('adminTools').style.display=on?'block':'none';if(on){renderAdminSummary();renderEventList();renderAdminLists()}}
-$('loginBtn').onclick=async()=>{if(!db)return alert('Supabase is not configured.');let{error}=await db.auth.signInWithPassword({email:$('adminEmail').value,password:$('adminPassword').value});if(error)return alert(error.message);checkSession()};$('logoutBtn').onclick=async()=>{await db.auth.signOut();checkSession()};
+async function isApprovedAdmin(session){
+ if(!db||!session?.user)return false;
+ const {data,error}=await db.from('admins').select('user_id').eq('user_id',session.user.id).maybeSingle();
+ return !error && !!data;
+}
+async function checkSession(){
+ if(!db)return;
+ let{data}=await db.auth.getSession();
+ let session=data.session||null;
+ let approved=await isApprovedAdmin(session);
+ $('loginBox').style.display=approved?'none':'block';
+ $('adminTools').style.display=approved?'block':'none';
+ $('adminBtn').style.display=approved?'inline-flex':'none';
+ $('addPlayerQuick').style.display=approved?'inline-flex':'none';
+ if(session && !approved){
+   await db.auth.signOut();
+   session=null;
+ }
+ if(approved){renderAdminSummary();renderEventList();renderAdminLists()}
+ return approved;
+}
+$('loginBtn').onclick=async()=>{
+ if(!db)return alert('Supabase is not configured.');
+ let{data,error}=await db.auth.signInWithPassword({email:$('adminEmail').value,password:$('adminPassword').value});
+ if(error)return alert(error.message);
+ const approved=await isApprovedAdmin(data.session);
+ if(!approved){await db.auth.signOut();$('adminTools').style.display='none';alert('This account is not authorized as a Shyaka Cup administrator.');return;}
+ await checkSession();
+};
+$('logoutBtn').onclick=async()=>{await db.auth.signOut();$('adminModal').classList.remove('show');await checkSession()};
+// Private admin entrance: bookmark your normal website URL with ?admin=1 at the end.
+if(new URLSearchParams(location.search).get('admin')==='1'){setTimeout(openAdmin,150)}else{checkSession()}
+
 function getFixture(n){return fixtures.find(f=>+f.match_no===+n)}
 function syncResultForm(){let f=getFixture($('resultMatch').value);if(!f)return;$('resultStatus').value=f.status||'scheduled';$('homeScore').value=f.home_score??'';$('awayScore').value=f.away_score??''}
 $('resultMatch').onchange=syncResultForm;
