@@ -1,0 +1,13 @@
+SHYAKA CUP FLAT PLAYER/LICENCE REPAIR
+
+1. Extract this ZIP.
+2. In GitHub, open the root of shyaka-cup-entebbe-player-directory.
+3. Add file -> Upload files.
+4. Select ALL files from this extracted repair folder (including index.html).
+5. GitHub will ask to replace index.html; accept/commit the upload to main.
+6. Do NOT create folders. These files are intentionally flat in the repository root.
+7. Wait for Vercel Production deployment to become Ready, then refresh the website.
+
+The new naming avoids conflicts:
+- Player photo: photo-BKIWC01.jpg
+- Player licence: licence-BKIWC01.jpg
