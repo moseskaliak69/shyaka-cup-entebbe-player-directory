@@ -1,9 +1,13 @@
-SHYAKA CUP ADMIN SECURITY UPDATE
+SHYAKA CUP PLAYER + GALLERY FIX
 
-1. In Supabase SQL Editor run admin-security-lockdown.sql once.
-2. In GitHub upload the new index.html to the repository root, replacing the current index.html.
-3. Commit to main and allow Vercel to redeploy.
-4. Public users will no longer see Admin or Add Player buttons.
-5. Admins open the private login by adding ?admin=1 to the end of the normal website address.
-   Example: https://YOUR-DOMAIN.vercel.app/?admin=1
-6. Only accounts listed in public.admins can enter the Admin Centre.
+This update fixes two issues:
+1. Newly added Supabase players now load on the public Players page.
+2. Gallery photos can be clicked/tapped to open full-size in a viewer.
+
+UPLOAD:
+- Upload the replacement index.html to the ROOT of your existing GitHub repository.
+- Commit directly to main.
+- Vercel should redeploy automatically.
+- Refresh the live site with Ctrl + F5 after deployment.
+
+No new Supabase SQL is required for this update.
