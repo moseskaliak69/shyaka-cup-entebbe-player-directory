@@ -1,0 +1,6 @@
+{
+  "appId": "com.shyakacup.entebbe",
+  "appName": "Shyaka Cup Entebbe",
+  "webDir": "www",
+  "server": {"androidScheme":"https"}
+}
