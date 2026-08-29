@@ -1,21 +1,47 @@
-SHYAKA CUP – PLAYER LIST FIX
+SHYAKA CUP — LIVE SCORES + REFEREE REPORTS UPDATE
 
-This fixes the case where Add Player says "Player added successfully"
-but the new player does not appear in the public Players list.
+NEW FEATURES
+1. Public LIVE SCORES page.
+2. Admin can change a match Status to LIVE and update the score during play.
+3. Live score page also shows match events (goals, cards, substitutions, etc.).
+4. Match Centre shows live scores.
+5. Full Referee Reports section in Admin Centre.
+6. Referee report fields include:
+   - Main referee
+   - Assistant referees
+   - Fourth official
+   - Kick-off
+   - Final score
+   - Yellow/red cards
+   - Pitch condition
+   - Team conduct
+   - Incidents
+   - General remarks
+7. Referee reports can remain PRIVATE or be published to public Match Centre.
+8. Referee report can be printed from Admin Centre.
 
-Cause fixed:
-- The app was hiding a Supabase player when the player number matched
-  one of the original built-in 47 player records.
-- Supabase records now take priority and replace the older built-in
-  record with the same player number.
-- The Players list and counters refresh immediately after adding.
+INSTALL
+A. In Supabase SQL Editor, run:
+   supabase-live-scores-referee-reports.sql
 
-HOW TO INSTALL
-1. Extract this ZIP.
-2. Upload ONLY the replacement index.html to the ROOT of the same GitHub repo.
-3. Commit directly to main.
-4. Wait for Vercel production deployment.
-5. Refresh the live website with Ctrl + F5.
-6. Open Players and test the newly added player.
+B. Then upload the replacement:
+   index.html
+to the ROOT of the existing GitHub repository and commit to main.
 
-No Supabase SQL is required for this fix.
+C. Wait for Vercel to redeploy and refresh with Ctrl + F5.
+
+HOW TO USE LIVE SCORES
+Admin Centre > Results
+- Select match
+- Status = Live
+- Enter current Home Score and Away Score
+- Save Result
+You can update it repeatedly during the match.
+At full time set Status = Completed.
+
+HOW TO USE REFEREE REPORT
+Admin Centre > Referee Reports
+- Select match
+- Complete report
+- Tick Publish only if the report should be visible publicly
+- Save
