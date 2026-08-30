@@ -252,6 +252,6 @@ if($('galleryLightboxClose'))$('galleryLightboxClose').onclick=closeGalleryPhoto
 if($('galleryLightbox'))$('galleryLightbox').onclick=e=>{if(e.target===$('galleryLightbox'))closeGalleryPhoto()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeGalleryPhoto()});
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
-if($('closePlayerProfile'))$('closePlayerProfile').onclick=closePlayerProfile;if($('playerProfileModal'))$('playerProfileModal').onclick=e=>{if(e.target===$('playerProfileModal'))closePlayerProfile()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('playerProfileModal')?.classList.contains('show'))closePlayerProfile()});
+if($('closeLicenceViewer'))$('closeLicenceViewer').onclick=closeLicenceViewer;if($('licenceViewerModal'))$('licenceViewerModal').onclick=e=>{if(e.target===$('licenceViewerModal'))closeLicenceViewer()};if($('closePlayerProfile'))$('closePlayerProfile').onclick=closePlayerProfile;if($('backToPlayersBtn'))$('backToPlayersBtn').onclick=closePlayerProfile;if($('playerProfileModal'))$('playerProfileModal').onclick=e=>{if(e.target===$('playerProfileModal'))closePlayerProfile()};document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('licenceViewerModal')?.classList.contains('show')){closeLicenceViewer();return}if($('playerProfileModal')?.classList.contains('show'))closePlayerProfile()}});
 initSelects();renderAll();loadOnline();
 </script></body></html>
