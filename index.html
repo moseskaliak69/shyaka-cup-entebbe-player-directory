@@ -138,6 +138,14 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
   .sponsor-v4 h2{font-size:24px}
 }
 
+
+/* LIVE SCORE PULSE */
+.live-dot{animation:shyakaLivePulse 1.15s ease-in-out infinite}
+@keyframes shyakaLivePulse{
+0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 0 0 rgba(66,227,131,.55)}
+50%{opacity:.35;transform:scale(.82);box-shadow:0 0 0 7px rgba(66,227,131,0)}
+}
+
 </style></head>
 <body>
 <header class="top"><div class="brand"><img class="crest" src="shyaka-cup-logo.jpg" alt="Shyaka Cup Entebbe logo"><div><h1>SHYAKA CUP ENTEBBE</h1><small>1st Edition • 2026 • Atasosola</small></div><div class="spacer"></div><button class="btn gold" id="adminBtn" style="display:none">Admin Centre</button></div>
@@ -405,6 +413,14 @@ if($('printRefReport'))$('printRefReport').onclick=()=>{let f=getFixture($('refM
   .sponsor-v4 h2{font-size:24px}
 }
 
+
+/* LIVE SCORE PULSE */
+.live-dot{animation:shyakaLivePulse 1.15s ease-in-out infinite}
+@keyframes shyakaLivePulse{
+0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 0 0 rgba(66,227,131,.55)}
+50%{opacity:.35;transform:scale(.82);box-shadow:0 0 0 7px rgba(66,227,131,0)}
+}
+
 </style></head><body><h1>SHYAKA CUP ENTEBBE 2026 — REFEREE MATCH REPORT</h1><table><tr><td class="label">Match</td><td>#${f.match_no} ${esc(f.home_team)} vs ${esc(f.away_team)}</td></tr><tr><td class="label">Date / Venue</td><td>${prettyDate(f.match_date)} / ${esc(f.venue)}</td></tr><tr><td class="label">Referee</td><td>${esc($('refereeName').value)}</td></tr><tr><td class="label">Assistant Referee 1</td><td>${esc($('assistantRef1').value)}</td></tr><tr><td class="label">Assistant Referee 2</td><td>${esc($('assistantRef2').value)}</td></tr><tr><td class="label">Fourth Official</td><td>${esc($('fourthOfficial').value)}</td></tr><tr><td class="label">Kick-off</td><td>${esc($('refKickoff').value)}</td></tr><tr><td class="label">Final Score</td><td>${esc($('refFinalScore').value)}</td></tr><tr><td class="label">Yellow / Red Cards</td><td>${esc($('refYellows').value)} / ${esc($('refReds').value)}</td></tr><tr><td class="label">Pitch Condition</td><td>${esc($('refPitch').value)}</td></tr><tr><td class="label">Team Conduct</td><td>${esc($('refConduct').value)}</td></tr><tr><td class="label">Incidents</td><td>${esc($('refIncidents').value)}</td></tr><tr><td class="label">Remarks</td><td>${esc($('refRemarks').value)}</td></tr></table><p style="margin-top:50px">Referee Signature: ______________________________</p></body></html>`;w.document.write(body);w.document.close();w.print()};
 $('saveEvent').onclick=async()=>{let f=getFixture($('eventMatch').value);if(!f||!f.id)return alert('Match is not loaded from Supabase yet.');let minute=$('eventMinute').value;let payload={fixture_id:f.id,event_type:$('eventType').value,team_name:$('eventTeam').value,player_name:$('eventPlayer').value.trim(),minute:minute===''?null:+minute,notes:$('eventNotes').value.trim()};if(!payload.player_name)return alert('Enter the player name.');let{error}=await db.from('match_events').insert(payload);if(error)return alert(error.message);$('eventPlayer').value='';$('eventMinute').value='';$('eventNotes').value='';await loadOnline();alert('Match event added.')};
 async function uploadFile(file,prefix){if(!file)return '';let path=`${prefix}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;let{error}=await db.storage.from('player-files').upload(path,file);if(error)throw error;return db.storage.from('player-files').getPublicUrl(path).data.publicUrl}
@@ -419,4 +435,25 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeGalleryPhoto()}
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 if($('closeLicenceViewer'))$('closeLicenceViewer').onclick=closeLicenceViewer;if($('licenceViewerModal'))$('licenceViewerModal').onclick=e=>{if(e.target===$('licenceViewerModal'))closeLicenceViewer()};if($('closePlayerProfile'))$('closePlayerProfile').onclick=closePlayerProfile;if($('backToPlayersBtn'))$('backToPlayersBtn').onclick=closePlayerProfile;if($('playerProfileModal'))$('playerProfileModal').onclick=e=>{if(e.target===$('playerProfileModal'))closePlayerProfile()};document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('licenceViewerModal')?.classList.contains('show')){closeLicenceViewer();return}if($('playerProfileModal')?.classList.contains('show'))closePlayerProfile()}});
 initSelects();renderAll();loadOnline();
+
+// Live score auto-refresh (15 seconds)
+let shyakaLiveRefreshTimer=setInterval(async()=>{
+  if(document.hidden) return;
+  try{
+    await loadOnline();
+    renderLiveScores();
+    renderMatchCentre();
+  }catch(e){ console.warn('Live refresh skipped',e); }
+},15000);
+
+document.addEventListener('visibilitychange',async()=>{
+  if(!document.hidden){
+    try{
+      await loadOnline();
+      renderLiveScores();
+      renderMatchCentre();
+    }catch(e){}
+  }
+});
+
 </script></body></html>
