@@ -436,9 +436,14 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.se
 if($('closeLicenceViewer'))$('closeLicenceViewer').onclick=closeLicenceViewer;if($('licenceViewerModal'))$('licenceViewerModal').onclick=e=>{if(e.target===$('licenceViewerModal'))closeLicenceViewer()};if($('closePlayerProfile'))$('closePlayerProfile').onclick=closePlayerProfile;if($('backToPlayersBtn'))$('backToPlayersBtn').onclick=closePlayerProfile;if($('playerProfileModal'))$('playerProfileModal').onclick=e=>{if(e.target===$('playerProfileModal'))closePlayerProfile()};document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('licenceViewerModal')?.classList.contains('show')){closeLicenceViewer();return}if($('playerProfileModal')?.classList.contains('show'))closePlayerProfile()}});
 initSelects();renderAll();loadOnline();
 
-// Live score auto-refresh (15 seconds)
+// Live score auto-refresh (15 seconds) — PUBLIC VIEWS ONLY.
+// Skip refresh while Admin Centre is open so admin forms are never reset mid-edit.
+function shyakaAdminOpen(){
+  const modal=document.getElementById('adminModal');
+  return !!(modal && modal.classList.contains('show'));
+}
 let shyakaLiveRefreshTimer=setInterval(async()=>{
-  if(document.hidden) return;
+  if(document.hidden || shyakaAdminOpen()) return;
   try{
     await loadOnline();
     renderLiveScores();
@@ -447,7 +452,7 @@ let shyakaLiveRefreshTimer=setInterval(async()=>{
 },15000);
 
 document.addEventListener('visibilitychange',async()=>{
-  if(!document.hidden){
+  if(!document.hidden && !shyakaAdminOpen()){
     try{
       await loadOnline();
       renderLiveScores();
