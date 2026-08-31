@@ -442,23 +442,26 @@ function shyakaAdminOpen(){
   const modal=document.getElementById('adminModal');
   return !!(modal && modal.classList.contains('show'));
 }
-let shyakaLiveRefreshTimer=setInterval(async()=>{
-  if(document.hidden || shyakaAdminOpen()) return;
+async function refreshLiveOnly(){
+  if(!db) return;
   try{
-    await loadOnline();
+    const [f,e]=await Promise.all([
+      db.from('fixtures').select('*').order('match_no'),
+      db.from('match_events').select('*').order('created_at',{ascending:false})
+    ]);
+    if(!f.error&&f.data?.length) fixtures=f.data;
+    if(!e.error&&e.data) events=e.data;
     renderLiveScores();
     renderMatchCentre();
-  }catch(e){ console.warn('Live refresh skipped',e); }
+  }catch(err){console.warn('Live refresh skipped',err)}
+}
+let shyakaLiveRefreshTimer=setInterval(async()=>{
+  if(document.hidden || shyakaAdminOpen()) return;
+  await refreshLiveOnly();
 },15000);
 
 document.addEventListener('visibilitychange',async()=>{
-  if(!document.hidden && !shyakaAdminOpen()){
-    try{
-      await loadOnline();
-      renderLiveScores();
-      renderMatchCentre();
-    }catch(e){}
-  }
+  if(!document.hidden && !shyakaAdminOpen()) await refreshLiveOnly();
 });
 
 </script></body></html>
