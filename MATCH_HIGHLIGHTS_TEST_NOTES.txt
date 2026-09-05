@@ -1,0 +1,21 @@
+SHYAKA CUP 30-SECOND MATCH HIGHLIGHTS TEST BUILD
+Date: 2026-09-05
+
+What this build adds
+1. Admin Centre > Match Highlights tab.
+2. Admin selects a fixture and a video.
+3. If the video is longer than 30 seconds, admin chooses the start point of the best 30-second section.
+4. Preview button plays the selected section.
+5. On supported browsers, the app trims/captures the selected 30 seconds on the device, compresses it, then uploads only the short clip.
+6. Videos 30 seconds or shorter upload directly.
+7. One published highlight per fixture. Publishing again replaces the previous highlight.
+8. Public Gallery shows Match Highlights above tournament photos.
+9. Public video does not autoplay on the gallery page. It loads when the visitor opens the highlight.
+10. Separate Supabase bucket: match-highlights.
+11. Separate table: public.match_highlights.
+
+Important test limitation
+Automatic trimming in this first build uses the browser MediaRecorder + HTML video captureStream APIs. It is intended for testing on Chrome/Android. If a browser does not support this, upload a clip already 30 seconds or shorter. A future production version can use server-side transcoding for universal device support.
+
+Storage limit
+20 MB per processed highlight.

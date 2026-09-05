@@ -1,0 +1,15 @@
+SHYAKA CUP - ADMIN ONLY PLAYER DIRECTORY
+September 5, 2026
+
+Changes made from the September 4 ADMIN_NEW_PLAYERS_FIX build:
+1. Public Players navigation removed/hidden.
+2. Player Directory opens only after approved admin authentication.
+3. Public startup no longer downloads the players table.
+4. Old hardcoded local player records removed from index.html.
+5. Old bundled player photos/licences removed from the deploy package.
+6. Team cards no longer expose registered-player counts to public visitors.
+7. Supabase RLS changed so players SELECT is approved-admin only.
+8. Deleted-player records are approved-admin only.
+9. Licence viewer cache-busting timestamp removed for better loading performance.
+
+Admin entrance remains the normal website URL with ?admin=1.
