@@ -1,4 +1,4 @@
-const CACHE = 'shyaka-cup-pwa-v2';
+const CACHE = 'shyaka-cup-pwa-v3-highlights';
 const OFFLINE_URL = '/index.html';
 
 self.addEventListener('install', event => {
