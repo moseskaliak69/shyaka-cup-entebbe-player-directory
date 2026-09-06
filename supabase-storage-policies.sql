@@ -1,13 +1,8 @@
--- Run this only if uploading photos/licenses from the admin panel gives a storage permission error.
--- The bucket "player-files" must already exist and be PUBLIC.
-
-create policy "Authenticated admins can upload player files"
-on storage.objects for insert
-to authenticated
-with check (bucket_id = 'player-files');
-
-create policy "Authenticated admins can update player files"
-on storage.objects for update
-to authenticated
-using (bucket_id = 'player-files')
-with check (bucket_id = 'player-files');
+-- DEPRECATED SECURITY-SENSITIVE LEGACY SCRIPT
+-- DO NOT RUN THIS FILE AGAIN.
+-- Shyaka Cup production now uses approved-admin RLS and private player media.
+-- Re-running the old version of this script could weaken security by granting broad
+-- authenticated access or making player files public.
+--
+-- Current security rules are enforced in the live Supabase project and documented
+-- in SECURITY.md. Use a reviewed migration for any future database change.
