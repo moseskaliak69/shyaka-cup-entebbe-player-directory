@@ -1,4 +1,4 @@
-const CACHE = 'shyaka-cup-pwa-v9-bugonga-portraits-restored';
+const CACHE = 'shyaka-cup-pwa-v10-vibesec';
 const OFFLINE_URL = '/index.html';
 
 self.addEventListener('install', event => {
