@@ -1,4 +1,8 @@
-drop policy if exists "Public can add players" on public.players;
-create policy "Authenticated admins can add players" on public.players for insert to authenticated with check (true);
-create policy "Authenticated admins can upload player files" on storage.objects for insert to authenticated with check (bucket_id = 'player-files');
-create policy "Public can read player files" on storage.objects for select to public using (bucket_id = 'player-files');
+-- DEPRECATED SECURITY-SENSITIVE LEGACY SCRIPT
+-- DO NOT RUN THIS FILE AGAIN.
+-- Shyaka Cup production now uses approved-admin RLS and private player media.
+-- Re-running the old version of this script could weaken security by granting broad
+-- authenticated access or making player files public.
+--
+-- Current security rules are enforced in the live Supabase project and documented
+-- in SECURITY.md. Use a reviewed migration for any future database change.
