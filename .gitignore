@@ -1,0 +1,17 @@
+# Never commit private player media or local secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Shyaka Cup private player media
+BKIW*.jpg
+photo-BKIW*.jpg
+licence-BKIW*.jpg
+licenses/
+photos/
+player-files/
+private-media/
