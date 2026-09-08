@@ -1,4 +1,4 @@
-const CACHE = 'shyaka-cup-pwa-v10-vibesec';
+const CACHE = 'shyaka-cup-pwa-v3-highlights';
 const OFFLINE_URL = '/index.html';
 
 self.addEventListener('install', event => {
@@ -8,8 +8,7 @@ self.addEventListener('install', event => {
     '/icon-192.png',
     '/icon-512.png',
     '/apple-touch-icon.png',
-    '/official-sponsor-shyaka.jpg',
-    '/shyaka-cup-logo.jpg'
+    '/official-sponsor-shyaka.jpg'
   ])));
   self.skipWaiting();
 });
