@@ -1,5 +1,5 @@
 // private-player-media-fix-v99
-const CACHE = 'shyaka-cup-pwa-v3-highlights';
+const CACHE = 'shyaka-cup-media-reliability-v7';
 const OFFLINE_URL = '/index.html';
 
 self.addEventListener('install', event => {
