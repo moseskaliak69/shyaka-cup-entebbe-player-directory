@@ -1,5 +1,6 @@
 // private-player-media-fix-v99
-const CACHE = 'shyaka-cup-stadium-v2';
+const CACHE = 'shyaka-cup-stadium-v3';
+const PUBLIC_MEDIA_CACHE = 'shyaka-cup-public-media-v1';
 const OFFLINE_URL = '/index.html';
 
 self.addEventListener('install', event => {
@@ -7,6 +8,8 @@ self.addEventListener('install', event => {
     OFFLINE_URL,
     '/public-design.css',
     '/public-design.js',
+    '/offline-cache.js',
+    '/supabase-config.js',
     '/public-teams.js',
     '/public-fonts.css',
     '/public-assets/stadium.webp',
@@ -48,7 +51,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))
+      Promise.all(keys.filter(key => ![CACHE,PUBLIC_MEDIA_CACHE].includes(key)).map(key => caches.delete(key)))
     )
   );
   self.clients.claim();
@@ -59,7 +62,21 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
+  // Cache only public gallery images that have already been viewed. Never cache
+  // player-files, signed URLs, API responses, licences or authenticated media.
+  if (url.origin !== self.location.origin) {
+    const isPublicGalleryImage=request.destination==='image'&&
+      url.pathname.includes('/storage/v1/object/public/gallery/');
+    if(!isPublicGalleryImage)return;
+    event.respondWith(caches.open(PUBLIC_MEDIA_CACHE).then(async cache=>{
+      const cached=await cache.match(request);
+      if(cached)return cached;
+      const response=await fetch(request);
+      if(response&&(response.ok||response.type==='opaque'))cache.put(request,response.clone());
+      return response;
+    }));
+    return;
+  }
   // Development review pages must never replace the app's offline document.
   if (['/review','/design-preview.html','/design-demo.js'].includes(url.pathname)) return;
 
