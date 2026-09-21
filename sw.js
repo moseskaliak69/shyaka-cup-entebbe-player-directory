@@ -1,10 +1,12 @@
-// private-player-media-fix-v99
-const CACHE = 'shyaka-cup-stadium-v3';
-const PUBLIC_MEDIA_CACHE = 'shyaka-cup-public-media-v1';
+// Only public app-shell assets and bounded public gallery images are cached.
+const CACHE = 'shyaka-cup-stadium-v4';
+const PUBLIC_MEDIA_CACHE = 'shyaka-cup-public-media-v2';
 const OFFLINE_URL = '/index.html';
-
-self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll([
+const MEDIA_ORIGIN = 'https://tjabrrvfxlyqkhzhtnyb.supabase.co';
+const MEDIA_MAX_AGE = 24 * 60 * 60 * 1000;
+const MEDIA_MAX_ENTRIES = 40;
+const MEDIA_MAX_BYTES = 2 * 1024 * 1024;
+const ASSETS = [
     OFFLINE_URL,
     '/public-design.css',
     '/public-design.js',
@@ -44,54 +46,85 @@ self.addEventListener('install', event => {
     '/icon-512.png',
     '/apple-touch-icon.png',
     '/official-sponsor-shyaka.jpg'
-  ])));
-  self.skipWaiting();
+  ];
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
-
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(key => ![CACHE,PUBLIC_MEDIA_CACHE].includes(key)).map(key => caches.delete(key)))
-    )
-  );
-  self.clients.claim();
+  event.waitUntil((async()=>{
+    const keys=await caches.keys();
+    await Promise.all(keys.filter(key=>key.startsWith('shyaka-cup-')&&![CACHE,PUBLIC_MEDIA_CACHE].includes(key)).map(key=>caches.delete(key)));
+    await pruneMedia(await caches.open(PUBLIC_MEDIA_CACHE));
+    await self.clients.claim();
+  })());
 });
-
-self.addEventListener('fetch', event => {
-  const request = event.request;
-  if (request.method !== 'GET') return;
-
-  const url = new URL(request.url);
-  // Cache only public gallery images that have already been viewed. Never cache
-  // player-files, signed URLs, API responses, licences or authenticated media.
-  if (url.origin !== self.location.origin) {
-    const isPublicGalleryImage=request.destination==='image'&&
-      url.pathname.includes('/storage/v1/object/public/gallery/');
-    if(!isPublicGalleryImage)return;
-    event.respondWith(caches.open(PUBLIC_MEDIA_CACHE).then(async cache=>{
-      const cached=await cache.match(request);
-      if(cached)return cached;
-      const response=await fetch(request);
-      if(response&&(response.ok||response.type==='opaque'))cache.put(request,response.clone());
-      return response;
-    }));
-    return;
+async function timedFetch(request){
+  const controller=new AbortController();let timer;
+  try{return await Promise.race([
+    fetch(request,{signal:controller.signal}),
+    new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new Error('Network timeout'))},4000)})
+  ])}finally{clearTimeout(timer)}
+}
+async function pruneMedia(cache){
+  const keys=await cache.keys();
+  for(const key of keys){
+    const response=await cache.match(key),stamp=Number(response?.headers.get('x-shyaka-cached-at'));
+    if(!stamp||Date.now()-stamp>=MEDIA_MAX_AGE||stamp>Date.now())await cache.delete(key);
   }
-  // Development review pages must never replace the app's offline document.
-  if (['/review','/design-preview.html','/design-demo.js'].includes(url.pathname)) return;
-
-  event.respondWith(
-    fetch(request).then(response => {
-      if (response && response.ok) {
-        const copy = response.clone();
-        caches.open(CACHE).then(cache => cache.put(request, copy));
-      }
+  const remaining=await cache.keys();
+  await Promise.all(remaining.slice(0,Math.max(0,remaining.length-MEDIA_MAX_ENTRIES)).map(key=>cache.delete(key)));
+}
+// Serialize media writes so simultaneous image loads cannot exceed the entry limit.
+let mediaWrite=Promise.resolve();
+async function galleryResponse(request){
+  const cache=await caches.open(PUBLIC_MEDIA_CACHE);
+  await pruneMedia(cache);
+  const cached=await cache.match(request);
+  let response;
+  try{response=await timedFetch(new Request(request,{credentials:'omit'}));}
+  catch(error){if(cached)return cached;throw error}
+  if(response.status>=500){if(cached)return cached;return response}
+  if(!response.ok){await cache.delete(request);return response}
+  if(response.type==='opaque'||!response.headers.get('content-type')?.startsWith('image/'))return response;
+  const copy=response.clone();
+  mediaWrite=mediaWrite.catch(()=>{}).then(async()=>{
+    const blob=await copy.blob();if(blob.size>MEDIA_MAX_BYTES){await cache.delete(request);return}
+    const headers=new Headers(copy.headers);headers.set('x-shyaka-cached-at',String(Date.now()));
+    // This body is decoded; do not preserve compression/transfer size headers.
+    headers.delete('content-encoding');headers.delete('content-length');
+    await cache.delete(request);
+    await cache.put(request,new Response(blob,{status:200,headers}));
+    await pruneMedia(cache);
+  });
+  await mediaWrite.catch(()=>{});
+  return response;
+}
+async function shellResponse(request){
+  const cache=await caches.open(CACHE);
+  const navigation=request.mode==='navigate';
+  let response;
+  try{
+    response=await timedFetch(request);
+    if(response.status<500){
+      if(response.ok){try{await cache.put(navigation?OFFLINE_URL:request,response.clone())}catch(error){/* Storage may be full. */}}
       return response;
-    }).catch(async () => {
-      const cached = await caches.match(request);
-      if (cached) return cached;
-      if (request.mode === 'navigate') return caches.match(OFFLINE_URL);
-      throw new Error('Offline and not cached');
-    })
-  );
+    }
+  }catch(error){/* An unavailable origin must not prevent opening the saved app. */}
+  const cached=await cache.match(navigation?OFFLINE_URL:request);
+  if(cached)return cached;
+  return response||new Response('Offline copy unavailable. Connect once to prepare this device.',{status:503,headers:{'Content-Type':'text/plain'}});
+}
+self.addEventListener('fetch', event => {
+  const request=event.request;if(request.method!=='GET')return;
+  const url=new URL(request.url);
+  if(url.origin===MEDIA_ORIGIN&&request.destination==='image'&&
+     url.pathname.startsWith('/storage/v1/object/public/gallery/')&&!url.search&&
+     !request.headers.has('authorization')){
+    event.respondWith(galleryResponse(request).catch(()=>timedFetch(new Request(request,{credentials:'omit'}))));return;
+  }
+  if(url.origin!==self.location.origin)return;
+  // No API, signed media, player media, or arbitrary same-origin responses.
+  const navigation=request.mode==='navigate'&&['/','/index.html'].includes(url.pathname);
+  if(!navigation&&(!ASSETS.includes(url.pathname)||url.search))return;
+  event.respondWith(shellResponse(request).catch(()=>timedFetch(request).catch(()=>new Response('Offline copy unavailable. Connect once to prepare this device.',{status:503}))));
 });

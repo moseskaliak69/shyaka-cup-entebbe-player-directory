@@ -7,7 +7,9 @@
     "mobile:prepare": "node scripts/prepare-mobile.mjs",
     "android:add": "npm run mobile:prepare && npx cap add android",
     "ios:add": "npm run mobile:prepare && npx cap add ios",
-    "sync": "npm run mobile:prepare && npx cap sync"
+    "sync": "npm run mobile:prepare && npx cap sync",
+    "test": "node --test tests/*.test.cjs",
+    "check": "node scripts/check-syntax.cjs"
   },
   "dependencies": {
     "@capacitor/core": "^7.0.0"
