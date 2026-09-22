@@ -285,8 +285,10 @@ function showConnectionState(){
  if(!missing.length&&cacheWritable){banner.classList.remove('show');banner.textContent='';return}
  const details=missing.map(key=>{const stamp=cachedPublicData?.updatedAt?.[key];return `${PUBLIC_LABELS[key]}: ${stamp?'saved '+cacheTime(stamp)+' EAT':'not verified'}`}).join('; ');
  const checking=navigator.onLine!==false&&missing.length&&missing.every(key=>!publicChecked.has(key));
+ // Initial online verification runs quietly; failed checks still show a warning.
+ if(checking&&cacheWritable){banner.classList.remove('show');banner.textContent='';return}
  const scoresWarning=missing.some(key=>key==='fixtures'||key==='events')?' Scores may be out of date.':'';
- banner.textContent=(checking?'Checking for latest updates… ':(missing.length?'Updates interrupted — '+details+'.'+scoresWarning+' ':''))+(!cacheWritable?'This device cannot save an offline copy. ':'')+(navigator.onLine===false?'Administrator changes require a connection.':'');
+ banner.textContent=(checking?'':(missing.length?'Updates interrupted — '+details+'.'+scoresWarning+' ':''))+(!cacheWritable?'This device cannot save an offline copy. ':'')+(navigator.onLine===false?'Administrator changes require a connection.':'');
  banner.classList.add('show');
 }
 function applyPublicSnapshot(snapshot,keys){
@@ -674,7 +676,7 @@ $('saveGallery').onclick=async()=>{try{let file=$('galleryFile').files[0],captio
 if($('galleryLightboxClose'))$('galleryLightboxClose').onclick=closeGalleryPhoto;
 if($('galleryLightbox'))$('galleryLightbox').onclick=e=>{if(e.target===$('galleryLightbox'))closeGalleryPhoto()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeGalleryPhoto();if($('highlightPlayerModal')?.classList.contains('open'))closeMatchHighlight()}});
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js?v=11').catch(()=>{}))}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js?v=12').catch(()=>{}))}
 if($('closeLicenceViewer'))$('closeLicenceViewer').onclick=closeLicenceViewer;if($('licenceViewerModal'))$('licenceViewerModal').onclick=e=>{if(e.target===$('licenceViewerModal'))closeLicenceViewer()};if($('closePlayerProfile'))$('closePlayerProfile').onclick=closePlayerProfile;if($('backToPlayersBtn'))$('backToPlayersBtn').onclick=closePlayerProfile;if($('playerProfileModal'))$('playerProfileModal').onclick=e=>{if(e.target===$('playerProfileModal'))closePlayerProfile()};document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('licenceViewerModal')?.classList.contains('show')){closeLicenceViewer();return}if($('playerProfileModal')?.classList.contains('show'))closePlayerProfile()}});
 if(db)db.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){approvedAdmin=false;players=[];refereeReports=refereeReports.filter(r=>r.is_public===true);clearPrivateMedia();document.querySelectorAll('.admin-player-access').forEach(el=>el.style.display='none');$('adminTools').style.display='none';$('loginBox').style.display='block';$('adminBtn').style.display='none';$('addPlayerQuick').style.display='none';if($('view-players').classList.contains('active'))showView('home');}});
 restorePublicCache();

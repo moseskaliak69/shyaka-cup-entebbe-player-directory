@@ -40,8 +40,8 @@ test('hanging queries time out and abort',async()=>{
 test('refreshing scores cannot leave expired reports in memory',async()=>{
  const h=harness();h.rows.referee_reports=[{id:1,is_public:true}];await h.all();h.advance(3600000);await h.c.fetchPublicData(['fixtures','events']);assert.equal(h.c.refereeReports.length,0);
 });
-test('initial connection check is not reported as an outage',()=>{
- const h=harness();h.c.showConnectionState();assert.match(h.banner.textContent,/Checking for latest/);assert.doesNotMatch(h.banner.textContent,/interrupted/);
+test('initial online connection check runs without a banner',()=>{
+ const h=harness();h.c.showConnectionState();assert.equal(h.banner.textContent,'');assert.equal(h.classes.has('show'),false);
 });
 test('news outage does not claim healthy scores are stale',async()=>{
  const h=harness();await h.all();h.failures.add('news');await h.all();assert.match(h.banner.textContent,/news: saved/);assert.doesNotMatch(h.banner.textContent,/Scores may be out of date/);
@@ -62,4 +62,11 @@ test('returning to the tab refreshes all sections immediately',async()=>{
 });
 test('public updates continue during admin editing without rendering over forms',async()=>{
  const h=harness();await h.all();const r=refreshHarness(h);r.admin(true);h.advance(60000);h.rows.news=[{title:'Admin open',published:true}];await h.c.refreshLiveOnly();assert.equal(h.c.newsItems[0].title,'Admin open');assert.equal(r.rendered.length,0);
+});
+
+test('initial offline visit still warns about unverified scores',()=>{
+ const h=harness();h.c.navigator.onLine=false;h.c.showConnectionState();assert.equal(h.classes.has('show'),true);assert.match(h.banner.textContent,/Scores may be out of date/);
+});
+test('failed initial request shows a warning after quiet startup',async()=>{
+ const h=harness();h.c.showConnectionState();assert.equal(h.classes.has('show'),false);h.failures.add('fixtures');await h.all();assert.equal(h.classes.has('show'),true);assert.match(h.banner.textContent,/Updates interrupted/);
 });
