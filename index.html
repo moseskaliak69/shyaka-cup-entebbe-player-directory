@@ -261,11 +261,12 @@ const FIXTURE_SEED=[{"match_no":1,"match_date":"2026-08-30","division":"Kiwafu W
 const TEAM_NAMES=["BANGA NAKIWOGO", "BUGONGA", "BUSAMBAGA", "KAKEKA", "KIGUNGU CENTRAL", "KITASA", "KITOORO", "KITUBULU", "KIWAFU CENTRAL", "KIWAFU EAST", "KIWAFU WEST", "LUGONJO", "LUNYO CENTRAL", "LUNYO EAST", "MANYAGO 1", "MANYAGO 2", "MAYANZI", "MISOLI", "NAKASAMBA", "NAMATE", "NSAMIZI", "OLD ENTEBBE", "POST OFFICE", "VIRUS"];
 const db=(window.supabase&&window.SHYAKA_SUPABASE_URL&&window.SHYAKA_SUPABASE_ANON_KEY)?window.supabase.createClient(window.SHYAKA_SUPABASE_URL,window.SHYAKA_SUPABASE_ANON_KEY):null;
 // Read-only public client: keeps the public Players directory available even while an admin is signed in.
-const publicDb=(window.supabase&&window.SHYAKA_SUPABASE_URL&&window.SHYAKA_SUPABASE_ANON_KEY)?window.supabase.createClient(window.SHYAKA_SUPABASE_URL,window.SHYAKA_SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}):null;
+const publicDb=(window.supabase&&window.SHYAKA_SUPABASE_URL&&window.SHYAKA_SUPABASE_ANON_KEY)?window.supabase.createClient(window.SHYAKA_SUPABASE_URL,window.SHYAKA_SUPABASE_ANON_KEY,{auth:{storageKey:'shyaka-public-readonly',persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}):null;
 let players=[...LOCAL_PLAYERS], fixtures=FIXTURE_SEED.map(x=>({...x,status:'scheduled',home_score:null,away_score:null})), events=[], villages=[], newsItems=[], galleryItems=[], matchHighlights=[], teamMeta=[], refereeReports=[], deletedPlayerNumbers=new Set();
 let approvedAdmin=false;
 let cachedPublicData=null,cacheWritable=true,publicRequestInFlight=null;
 const PUBLIC_LABELS={fixtures:'fixtures and scores',events:'match events',newsItems:'news',galleryItems:'gallery',matchHighlights:'highlights',teamMeta:'teams',refereeReports:'published reports'};
+const publicChecked=new Set();
 const publicHealth=Object.fromEntries(Object.keys(PUBLIC_LABELS).map(key=>[key,false]));
 function publicStorage(){try{return window.localStorage}catch(error){return null}}
 function cacheTime(value){return new Date(value).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Africa/Kampala'})}
@@ -278,7 +279,9 @@ function showConnectionState(){
  const liveBadge=document.querySelector('#view-livescores .badge-live');if(liveBadge)liveBadge.textContent=liveUpdatesAvailable()?'LIVE MATCH UPDATES':'SAVED SCORES • UPDATES PAUSED';
  if(!missing.length&&cacheWritable){banner.classList.remove('show');banner.textContent='';return}
  const details=missing.map(key=>{const stamp=cachedPublicData?.updatedAt?.[key];return `${PUBLIC_LABELS[key]}: ${stamp?'saved '+cacheTime(stamp)+' EAT':'not verified'}`}).join('; ');
- banner.textContent=(missing.length?'Updates interrupted — '+details+'. Scores may be out of date. ':'')+(!cacheWritable?'This device cannot save an offline copy. ':'')+(navigator.onLine===false?'Administrator changes require a connection.':'');
+ const checking=navigator.onLine!==false&&missing.length&&missing.every(key=>!publicChecked.has(key));
+ const scoresWarning=missing.some(key=>key==='fixtures'||key==='events')?' Scores may be out of date.':'';
+ banner.textContent=(checking?'Checking for latest updates… ':(missing.length?'Updates interrupted — '+details+'.'+scoresWarning+' ':''))+(!cacheWritable?'This device cannot save an offline copy. ':'')+(navigator.onLine===false?'Administrator changes require a connection.':'');
  banner.classList.add('show');
 }
 function applyPublicSnapshot(snapshot,keys){
@@ -320,7 +323,7 @@ async function fetchPublicData(keys){
  const work=(async()=>{
   if(preceding)await preceding;
   const client=publicDb;
-  if(!client){for(const key of keys)publicHealth[key]=false;showConnectionState();return}
+  if(!client){for(const key of keys){publicHealth[key]=false;publicChecked.add(key);}showConnectionState();return}
   const definitions={fixtures:['fixtures','match_no'],events:['match_events','created_at'],newsItems:['news','published_at'],galleryItems:['gallery','created_at'],matchHighlights:['match_highlights','created_at'],teamMeta:['team_profiles','team_name'],refereeReports:['referee_reports','created_at']};
   const patch={};
   await Promise.all(keys.map(async key=>{
@@ -332,7 +335,7 @@ async function fetchPublicData(keys){
     const result=await boundedQuery(query.order(order,{ascending:key==='fixtures'||key==='teamMeta'}));
     publicHealth[key]=!result.error&&Array.isArray(result.data);
     if(publicHealth[key])patch[key]=result.data;
-   }catch(error){publicHealth[key]=false}
+   }catch(error){publicHealth[key]=false}finally{publicChecked.add(key)}
   }));
   // Fixtures and events form one match snapshot. Never pair fresh events with old scores.
   if(keys.includes('fixtures')&&keys.includes('events')&&(!publicHealth.fixtures||!publicHealth.events)){
@@ -666,35 +669,39 @@ $('saveGallery').onclick=async()=>{try{let file=$('galleryFile').files[0],captio
 if($('galleryLightboxClose'))$('galleryLightboxClose').onclick=closeGalleryPhoto;
 if($('galleryLightbox'))$('galleryLightbox').onclick=e=>{if(e.target===$('galleryLightbox'))closeGalleryPhoto()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeGalleryPhoto();if($('highlightPlayerModal')?.classList.contains('open'))closeMatchHighlight()}});
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js?v=9').catch(()=>{}))}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js?v=10').catch(()=>{}))}
 if($('closeLicenceViewer'))$('closeLicenceViewer').onclick=closeLicenceViewer;if($('licenceViewerModal'))$('licenceViewerModal').onclick=e=>{if(e.target===$('licenceViewerModal'))closeLicenceViewer()};if($('closePlayerProfile'))$('closePlayerProfile').onclick=closePlayerProfile;if($('backToPlayersBtn'))$('backToPlayersBtn').onclick=closePlayerProfile;if($('playerProfileModal'))$('playerProfileModal').onclick=e=>{if(e.target===$('playerProfileModal'))closePlayerProfile()};document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('licenceViewerModal')?.classList.contains('show')){closeLicenceViewer();return}if($('playerProfileModal')?.classList.contains('show'))closePlayerProfile()}});
 if(db)db.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){approvedAdmin=false;players=[];refereeReports=refereeReports.filter(r=>r.is_public===true);clearPrivateMedia();document.querySelectorAll('.admin-player-access').forEach(el=>el.style.display='none');$('adminTools').style.display='none';$('loginBox').style.display='block';$('adminBtn').style.display='none';$('addPlayerQuick').style.display='none';if($('view-players').classList.contains('active'))showView('home');}});
 restorePublicCache();
 showConnectionState();
 window.addEventListener('offline',()=>{showConnectionState();renderAll()});
-window.addEventListener('online',()=>{if(!db){location.reload();return}if(!shyakaAdminOpen())loadOnline()});
+window.addEventListener('online',()=>{if(!publicDb){location.reload();return}refreshLiveOnly(true)});
 setInterval(()=>{const expired=expirePublicCache();showConnectionState();if(!document.hidden&&!shyakaAdminOpen()){if(expired)renderAll();else if(!liveUpdatesAvailable()){renderLiveScores();renderHome();renderMatchCentre()}}},15000);
-setInterval(()=>{if(!document.hidden&&!shyakaAdminOpen())loadOnline()},60000);
 initSelects();renderAll();checkSession().catch(()=>false).then(async ok=>{if(!ok)await loadOnline();if(new URLSearchParams(location.search).get('admin')==='1')$('adminModal').classList.add('show')});
 
-// Live score auto-refresh (15 seconds) — PUBLIC VIEWS ONLY.
-// Skip refresh while Admin Centre is open so admin forms are never reset mid-edit.
+// Refresh public data without rebuilding administrator forms.
 function shyakaAdminOpen(){
   const modal=document.getElementById('adminModal');
   return !!(modal && modal.classList.contains('show'));
 }
-async function refreshLiveOnly(){
- if(publicRequestInFlight)return;
- await fetchPublicData(['fixtures','events']);
+function publicRefreshKeys(forceAll=false){
+ return Object.keys(PUBLIC_LABELS).filter(key=>forceAll||key==='fixtures'||key==='events'||!publicHealth[key]||Date.now()-Date.parse(cachedPublicData?.updatedAt?.[key]||0)>=60000);
+}
+async function refreshLiveOnly(forceAll=false){
+ if(publicRequestInFlight){if(!forceAll)return;await publicRequestInFlight;}
+ const keys=publicRefreshKeys(forceAll);
+ await fetchPublicData(keys);
+ if(shyakaAdminOpen())return;
  renderLiveScores();renderMatchCentre();renderHome();renderResults();renderStandings();renderStats();
+ if(keys.length>2){renderFixtures();renderNews();renderGallery();renderHighlights();renderTeams();renderRefereeReports();}
 }
 let shyakaLiveRefreshTimer=setInterval(async()=>{
-  if(document.hidden || shyakaAdminOpen()) return;
+  if(document.hidden)return;
   await refreshLiveOnly();
 },15000);
 
 document.addEventListener('visibilitychange',async()=>{
-  if(!document.hidden && !shyakaAdminOpen()) await refreshLiveOnly();
+  if(!document.hidden)await refreshLiveOnly(true);
 });
 
 </script><script src="public-design.js"></script></body></html>

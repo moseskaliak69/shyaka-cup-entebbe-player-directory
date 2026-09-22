@@ -40,3 +40,26 @@ test('hanging queries time out and abort',async()=>{
 test('refreshing scores cannot leave expired reports in memory',async()=>{
  const h=harness();h.rows.referee_reports=[{id:1,is_public:true}];await h.all();h.advance(3600000);await h.c.fetchPublicData(['fixtures','events']);assert.equal(h.c.refereeReports.length,0);
 });
+test('initial connection check is not reported as an outage',()=>{
+ const h=harness();h.c.showConnectionState();assert.match(h.banner.textContent,/Checking for latest/);assert.doesNotMatch(h.banner.textContent,/interrupted/);
+});
+test('news outage does not claim healthy scores are stale',async()=>{
+ const h=harness();await h.all();h.failures.add('news');await h.all();assert.match(h.banner.textContent,/news: saved/);assert.doesNotMatch(h.banner.textContent,/Scores may be out of date/);
+});
+function refreshHarness(h){
+ let admin=false;const rendered=[],handlers={};
+ for(const n of ['renderFixtures','renderLiveScores','renderMatchCentre','renderHome','renderResults','renderStandings','renderStats','renderNews','renderGallery','renderHighlights','renderTeams','renderRefereeReports'])h.c[n]=()=>rendered.push(n);
+ h.c.document.getElementById=id=>id==='adminModal'?({classList:{contains:()=>admin}}):h.banner;
+ h.c.document.addEventListener=(name,fn)=>handlers[name]=fn;h.c.setInterval=()=>0;
+ vm.runInContext(region('// Refresh public data without','</script><script src="public-design.js">'),h.c);
+ return {rendered,handlers,admin:v=>admin=v};
+}
+test('periodic refresh renews secondary data before its freshness deadline',async()=>{
+ const h=harness();await h.all();const r=refreshHarness(h);h.advance(60000);h.rows.news=[{title:'Updated',published:true}];await h.c.refreshLiveOnly();assert.equal(h.c.newsItems[0].title,'Updated');assert.equal(h.c.publicSectionFresh('newsItems'),true);assert.ok(r.rendered.includes('renderNews'));
+});
+test('returning to the tab refreshes all sections immediately',async()=>{
+ const h=harness();await h.all();const r=refreshHarness(h);h.advance(180000);h.rows.news=[{title:'Resumed',published:true}];await r.handlers.visibilitychange();assert.equal(h.c.newsItems[0].title,'Resumed');assert.equal(h.c.publicSectionFresh('newsItems'),true);
+});
+test('public updates continue during admin editing without rendering over forms',async()=>{
+ const h=harness();await h.all();const r=refreshHarness(h);r.admin(true);h.advance(60000);h.rows.news=[{title:'Admin open',published:true}];await h.c.refreshLiveOnly();assert.equal(h.c.newsItems[0].title,'Admin open');assert.equal(r.rendered.length,0);
+});
