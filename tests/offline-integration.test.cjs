@@ -70,3 +70,5 @@ test('initial offline visit still warns about unverified scores',()=>{
 test('failed initial request shows a warning after quiet startup',async()=>{
  const h=harness();h.c.showConnectionState();assert.equal(h.classes.has('show'),false);h.failures.add('fixtures');await h.all();assert.equal(h.classes.has('show'),true);assert.match(h.banner.textContent,/Updates interrupted/);
 });
+test('a transient score read retries without displaying an interruption',async()=>{const h=harness();await h.all();const read=h.c.boundedQuery;let calls=0;h.c.boundedQuery=(q,t)=>++calls===1?Promise.resolve({error:Error('network')}):read(q,t);await h.c.fetchPublicData(['fixtures','events']);assert.equal(calls,3);assert.equal(h.classes.has('show'),false);assert.equal(h.c.liveUpdatesAvailable(),true);});
+test('authorization failures are not retried or hidden',async()=>{const h=harness();let calls=0;h.c.boundedQuery=async()=>{calls++;return {status:403,error:Error('Forbidden')}};await h.c.fetchPublicData(['fixtures','events']);assert.equal(calls,2);assert.match(h.banner.textContent,/Updates interrupted/);assert.equal(h.c.liveUpdatesAvailable(),false);});
