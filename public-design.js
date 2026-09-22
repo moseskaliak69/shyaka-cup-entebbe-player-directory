@@ -3,7 +3,7 @@
   const home = document.querySelector('.public-premium-home');
   home.hidden = true;
   home.setAttribute('aria-hidden', 'true');
-  const root = document.createElement('div'); root.id = 'publicHome'; home.before(root);
+  const root = document.getElementById('publicHome');
   const gallery = $('view-gallery');
   const photoPanel = gallery.querySelector('.panel'); photoPanel.hidden = true;
   const highlights = document.createElement('div'); highlights.id = 'publicHighlights'; gallery.prepend(highlights);
@@ -12,7 +12,7 @@
   brand.nextElementSibling.textContent = 'ENTEBBE 2026';
   const galleryNav = document.querySelector('#nav [data-view="gallery"]'); galleryNav.textContent = 'Highlights';
   const icon = name => `<img class="public-icon" src="public-icons/${name}.svg" alt="">`;
-  const menu = document.createElement('button'); menu.className='public-menu'; menu.setAttribute('aria-label','More tournament information'); menu.setAttribute('aria-expanded','false'); menu.innerHTML=icon('list'); brand.parentElement.after(menu);
+  const menu = document.querySelector('.public-menu');
   const publicMobileItems = [['home','house-fill','Home'],['fixtures','calendar4','Fixtures'],['livescores','broadcast','Live'],['gallery','play-circle','Highlights']];
   function renderMobileNav(){
     const items=approvedAdmin?[...publicMobileItems,['players','people','Players']]:publicMobileItems;

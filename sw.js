@@ -1,5 +1,5 @@
 // Only public app-shell assets and bounded public gallery images are cached.
-const CACHE = 'shyaka-cup-stadium-v5';
+const CACHE = 'shyaka-cup-stadium-v6';
 const PUBLIC_MEDIA_CACHE = 'shyaka-cup-public-media-v2';
 const OFFLINE_URL = '/index.html';
 const MEDIA_ORIGIN = 'https://tjabrrvfxlyqkhzhtnyb.supabase.co';
@@ -11,6 +11,7 @@ const ASSETS = [
     '/public-design.css',
     '/public-design.js',
     '/offline-cache.js',
+    '/vendor/supabase-2.116.0.min.js',
     '/supabase-config.js',
     '/public-teams.js',
     '/public-fonts.css',
