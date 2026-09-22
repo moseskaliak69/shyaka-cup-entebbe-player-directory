@@ -764,7 +764,7 @@ document.addEventListener('visibilitychange',async()=>{
   if(!document.hidden)await refreshLiveOnly(true);
 });
 
-setInterval(updateLiveClockDisplays,1000);
+setInterval(()=>{if(typeof updateLiveClockDisplays==='function')updateLiveClockDisplays()},1000);
 let shyakaRealtimeRefreshTimer=null;
 function scheduleRealtimeRefresh(){clearTimeout(shyakaRealtimeRefreshTimer);shyakaRealtimeRefreshTimer=setTimeout(()=>refreshLiveOnly(true),350)}
 try{
