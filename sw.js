@@ -1,5 +1,5 @@
 // Only public app-shell assets and bounded public gallery images are cached.
-const CACHE = 'shyaka-cup-stadium-v9';
+const CACHE = 'shyaka-cup-stadium-v10';
 const PUBLIC_MEDIA_CACHE = 'shyaka-cup-public-media-v2';
 const OFFLINE_URL = '/index.html';
 const MEDIA_ORIGIN = 'https://tjabrrvfxlyqkhzhtnyb.supabase.co';
@@ -49,7 +49,7 @@ const ASSETS = [
     '/official-sponsor-shyaka.jpg'
   ];
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS.map(path=>new Request(path,{cache:'reload'})))).then(()=>self.skipWaiting()));
 });
 self.addEventListener('activate', event => {
   event.waitUntil((async()=>{
@@ -103,6 +103,9 @@ async function galleryResponse(request){
 async function shellResponse(request){
   const cache=await caches.open(CACHE);
   const navigation=request.mode==='navigate';
+  // Serve one installed release immediately; update checks run separately.
+  const saved=await cache.match(navigation?OFFLINE_URL:request);
+  if(saved)return saved;
   let response;
   try{
     response=await timedFetch(request);

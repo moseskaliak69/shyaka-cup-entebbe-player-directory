@@ -51,7 +51,7 @@ function refreshHarness(h){
  for(const n of ['renderFixtures','renderLiveScores','renderMatchCentre','renderHome','renderResults','renderStandings','renderStats','renderNews','renderGallery','renderHighlights','renderTeams','renderRefereeReports'])h.c[n]=()=>rendered.push(n);
  h.c.document.getElementById=id=>id==='adminModal'?({classList:{contains:()=>admin}}):h.banner;
  h.c.document.addEventListener=(name,fn)=>handlers[name]=fn;h.c.setInterval=()=>0;
- vm.runInContext(region('// Refresh public data without','</script><script src="public-design.js">'),h.c);
+ vm.runInContext(region('// Refresh public data without','</script><script id="public-design-inline-script">'),h.c);
  return {rendered,handlers,admin:v=>admin=v};
 }
 test('periodic refresh renews secondary data before its freshness deadline',async()=>{

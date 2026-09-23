@@ -29,3 +29,11 @@ test('pinned SDK bundle exposes the existing Supabase browser client',()=>{
  const c={};vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(root,'vendor/supabase-2.116.0.min.js'),'utf8'),c);
  assert.equal(typeof c.supabase.createClient,'function');
 });
+test('current presentation is delivered in HTML without a second network wait',()=>{
+ for(const [id,file,tag] of [['public-design-inline','public-design.css','style'],['public-fonts-inline','public-fonts.css','style'],['public-design-inline-script','public-design.js','script']]){
+ const start='<'+tag+' id="'+id+'">';const embedded=html.slice(html.indexOf(start)+start.length,html.indexOf('</'+tag+'>',html.indexOf(start)));
+ assert.equal(embedded.trim(),fs.readFileSync(path.join(root,file),'utf8').trim());
+ }
+ assert.ok(html.indexOf('public-design-inline')<html.indexOf('<body'));
+ assert.match(html,/updateViaCache:'none'/);
+});
