@@ -457,8 +457,11 @@ function showConnectionState(){
  const checking=navigator.onLine!==false&&missing.length&&missing.every(key=>!publicChecked.has(key));
  // Initial online verification runs quietly; failed checks still show a warning.
  if(checking&&cacheWritable){banner.classList.remove('show');banner.textContent='';return}
+ // Age alone is not a failed request (for example, after a sleeping tab).
+ const interrupted=navigator.onLine===false||missing.some(key=>publicChecked.has(key)&&!publicHealth[key]);
+ const updateLabel=interrupted?'Updates interrupted':'Reconnecting… checking for updates';
  const scoresWarning=missing.some(key=>key==='fixtures'||key==='events')?' Scores may be out of date.':'';
- banner.textContent=(checking?'':(missing.length?'Updates interrupted — '+details+'.'+scoresWarning+' ':''))+(!cacheWritable?'This device cannot save an offline copy. ':'')+(navigator.onLine===false?'Administrator changes require a connection.':'');
+ banner.textContent=(checking?'':(missing.length?updateLabel+' — '+details+'.'+scoresWarning+' ':''))+(!cacheWritable?'This device cannot save an offline copy. ':'')+(navigator.onLine===false?'Administrator changes require a connection.':'');
  banner.classList.add('show');
 }
 function applyPublicSnapshot(snapshot,keys){
@@ -499,6 +502,7 @@ async function fetchPublicData(keys){
  const preceding=publicRequestInFlight;
  const work=(async()=>{
   if(preceding)await preceding;
+  showConnectionState();
   const client=publicDb;
   if(!client){for(const key of keys){publicHealth[key]=false;publicChecked.add(key);}showConnectionState();return}
   const definitions={fixtures:['fixtures','match_no'],events:['match_events','created_at'],newsItems:['news','published_at'],galleryItems:['gallery','created_at'],matchHighlights:['match_highlights','created_at'],teamMeta:['team_profiles','team_name'],refereeReports:['referee_reports','created_at']};
