@@ -442,6 +442,8 @@ let approvedAdmin=false;
 let cachedPublicData=null,cacheWritable=true,publicRequestInFlight=null;
 const PUBLIC_LABELS={fixtures:'fixtures and scores',events:'match events',newsItems:'news',galleryItems:'gallery',matchHighlights:'highlights',teamMeta:'teams',refereeReports:'published reports'};
 const publicChecked=new Set();
+// Request outcomes are independent of cache expiry and snapshot freshness.
+const publicFailures=new Set();
 const publicHealth=Object.fromEntries(Object.keys(PUBLIC_LABELS).map(key=>[key,false]));
 function publicStorage(){try{return window.localStorage}catch(error){return null}}
 function cacheTime(value){return new Date(value).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Africa/Kampala'})}
@@ -457,8 +459,11 @@ function showConnectionState(){
  const checking=navigator.onLine!==false&&missing.length&&missing.every(key=>!publicChecked.has(key));
  // Initial online verification runs quietly; failed checks still show a warning.
  if(checking&&cacheWritable){banner.classList.remove('show');banner.textContent='';return}
+ // Age alone is not a failed request (for example, after a sleeping tab).
+ const interrupted=navigator.onLine===false||missing.some(key=>publicFailures.has(key));
+ const updateLabel=interrupted?'Updates interrupted':'Reconnecting… checking for updates';
  const scoresWarning=missing.some(key=>key==='fixtures'||key==='events')?' Scores may be out of date.':'';
- banner.textContent=(checking?'':(missing.length?'Updates interrupted — '+details+'.'+scoresWarning+' ':''))+(!cacheWritable?'This device cannot save an offline copy. ':'')+(navigator.onLine===false?'Administrator changes require a connection.':'');
+ banner.textContent=(checking?'':(missing.length?updateLabel+' — '+details+'.'+scoresWarning+' ':''))+(!cacheWritable?'This device cannot save an offline copy. ':'')+(navigator.onLine===false?'Administrator changes require a connection.':'');
  banner.classList.add('show');
 }
 function applyPublicSnapshot(snapshot,keys){
@@ -499,8 +504,9 @@ async function fetchPublicData(keys){
  const preceding=publicRequestInFlight;
  const work=(async()=>{
   if(preceding)await preceding;
+  showConnectionState();
   const client=publicDb;
-  if(!client){for(const key of keys){publicHealth[key]=false;publicChecked.add(key);}showConnectionState();return}
+  if(!client){for(const key of keys){publicHealth[key]=false;publicChecked.add(key);publicFailures.add(key);}showConnectionState();return}
   const definitions={fixtures:['fixtures','match_no'],events:['match_events','created_at'],newsItems:['news','published_at'],galleryItems:['gallery','created_at'],matchHighlights:['match_highlights','created_at'],teamMeta:['team_profiles','team_name'],refereeReports:['referee_reports','created_at']};
   const patch={};
   await Promise.all(keys.map(async key=>{
@@ -518,7 +524,10 @@ async function fetchPublicData(keys){
     if(result.error&&navigator.onLine!==false&&(!status||status>=500||status===408||status===429))result=await boundedQuery(read(),5000);
     publicHealth[key]=!result.error&&Array.isArray(result.data);
     if(publicHealth[key])patch[key]=result.data;
-   }catch(error){publicHealth[key]=false}finally{publicChecked.add(key)}
+   }catch(error){publicHealth[key]=false}finally{
+    publicChecked.add(key);
+    if(publicHealth[key])publicFailures.delete(key);else publicFailures.add(key);
+   }
   }));
   // Fixtures and events form one match snapshot. Never pair fresh events with old scores.
   if(keys.includes('fixtures')&&keys.includes('events')&&(!publicHealth.fixtures||!publicHealth.events)){
@@ -1067,3 +1076,4 @@ try{
 })();
 
 </script></body></html>
+
