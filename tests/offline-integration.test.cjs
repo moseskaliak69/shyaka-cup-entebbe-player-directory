@@ -73,6 +73,23 @@ test('failed initial request shows a warning after quiet startup',async()=>{
 test('a transient score read retries without displaying an interruption',async()=>{const h=harness();await h.all();const read=h.c.boundedQuery;let calls=0;h.c.boundedQuery=(q,t)=>++calls===1?Promise.resolve({error:Error('network')}):read(q,t);await h.c.fetchPublicData(['fixtures','events']);assert.equal(calls,3);assert.equal(h.classes.has('show'),false);assert.equal(h.c.liveUpdatesAvailable(),true);});
 test('authorization failures are not retried or hidden',async()=>{const h=harness();let calls=0;h.c.boundedQuery=async()=>{calls++;return {status:403,error:Error('Forbidden')}};await h.c.fetchPublicData(['fixtures','events']);assert.equal(calls,2);assert.match(h.banner.textContent,/Updates interrupted/);assert.equal(h.c.liveUpdatesAvailable(),false);});
 
+for(const delay of [3600001,86400001])test(`cache expiry after ${delay}ms is not a request failure`,async()=>{
+ const h=harness();h.rows.referee_reports=[{id:1,is_public:true}];await h.all();
+ h.advance(delay);h.c.expirePublicCache();h.c.showConnectionState();
+ assert.equal(h.c.refereeReports.length,0);
+ if(delay>86400000)assert.equal(h.c.fixtures.length,0);
+ assert.match(h.banner.textContent,/Reconnecting/);
+ assert.doesNotMatch(h.banner.textContent,/Updates interrupted/);
+ assert.equal(h.c.liveUpdatesAvailable(),false);
+ await h.all();assert.equal(h.classes.has('show'),false);assert.equal(h.c.liveUpdatesAvailable(),true);
+});
+test('expiry and unrelated refreshes cannot hide a real failed request',async()=>{
+ const h=harness();await h.all();h.failures.add('referee_reports');await h.all();
+ h.advance(3600001);h.c.expirePublicCache();await h.c.fetchPublicData(['fixtures','events']);
+ assert.match(h.banner.textContent,/Updates interrupted/);
+ assert.match(h.banner.textContent,/published reports: not verified/);
+ h.failures.clear();await h.all();assert.equal(h.classes.has('show'),false);
+});
 test('age alone shows reconnecting while keeping scores marked stale',async()=>{
  const h=harness();await h.all();h.advance(91000);h.c.showConnectionState();
  assert.match(h.banner.textContent,/Reconnecting/);
@@ -105,3 +122,4 @@ test('offline state and known failures are never softened to reconnecting',async
  assert.match(h.banner.textContent,/Updates interrupted/);
  assert.match(h.banner.textContent,/news: saved/);
 });
+
