@@ -1,5 +1,5 @@
 // Only public app-shell assets and bounded public gallery images are cached.
-const CACHE = 'shyaka-cup-stadium-v11';
+const CACHE = 'shyaka-cup-stadium-v12';
 const PUBLIC_MEDIA_CACHE = 'shyaka-cup-public-media-v2';
 const OFFLINE_URL = '/index.html';
 const MEDIA_ORIGIN = 'https://tjabrrvfxlyqkhzhtnyb.supabase.co';
@@ -11,6 +11,7 @@ const ASSETS = [
     '/public-design.css',
     '/public-design.js',
     '/offline-cache.js',
+    '/gallery-images.js',
     '/vendor/supabase-2.116.0.min.js',
     '/supabase-config.js',
     '/public-teams.js',
@@ -77,7 +78,11 @@ async function pruneMedia(cache){
 }
 // Serialize media writes so simultaneous image loads cannot exceed the entry limit.
 let mediaWrite=Promise.resolve();
-async function galleryResponse(request){
+let mediaVersion=0;
+const mediaVersions=new Map();
+async function galleryResponse(request,defer){
+  const version=++mediaVersion;mediaVersions.set(request.url,version);let background=false;
+  try{
   const cache=await caches.open(PUBLIC_MEDIA_CACHE);
   await pruneMedia(cache);
   const cached=await cache.match(request);
@@ -85,20 +90,29 @@ async function galleryResponse(request){
   try{response=await timedFetch(new Request(request,{credentials:'omit'}));}
   catch(error){if(cached)return cached;throw error}
   if(response.status>=500){if(cached)return cached;return response}
-  if(!response.ok){await cache.delete(request);return response}
+  if(!response.ok){mediaWrite=mediaWrite.catch(()=>{}).then(()=>cache.delete(request));await mediaWrite;return response}
   if(response.type==='opaque'||!response.headers.get('content-type')?.startsWith('image/'))return response;
+  if(Number(response.headers.get('content-length'))>MEDIA_MAX_BYTES){mediaWrite=mediaWrite.catch(()=>{}).then(()=>cache.delete(request));await mediaWrite;return response}
   const copy=response.clone();
-  mediaWrite=mediaWrite.catch(()=>{}).then(async()=>{
-    const blob=await copy.blob();if(blob.size>MEDIA_MAX_BYTES){await cache.delete(request);return}
+  // Stream the response to the viewer now. Downloading a cache copy must never
+  // delay this image or hold up other image responses.
+  const persist=copy.blob().then(blob=>{
+   mediaWrite=mediaWrite.catch(()=>{}).then(async()=>{
+    if(mediaVersions.get(request.url)!==version)return;
+    if(blob.size>MEDIA_MAX_BYTES){await cache.delete(request);return}
     const headers=new Headers(copy.headers);headers.set('x-shyaka-cached-at',String(Date.now()));
     // This body is decoded; do not preserve compression/transfer size headers.
     headers.delete('content-encoding');headers.delete('content-length');
     await cache.delete(request);
     await cache.put(request,new Response(blob,{status:200,headers}));
     await pruneMedia(cache);
-  });
-  await mediaWrite.catch(()=>{});
+   });
+   return mediaWrite;
+  }).catch(()=>{}).finally(()=>{if(mediaVersions.get(request.url)===version)mediaVersions.delete(request.url)});
+  background=true;
+  defer(persist);
   return response;
+  }finally{if(!background&&mediaVersions.get(request.url)===version)mediaVersions.delete(request.url)}
 }
 async function shellResponse(request){
   const cache=await caches.open(CACHE);
@@ -124,7 +138,7 @@ self.addEventListener('fetch', event => {
   if(url.origin===MEDIA_ORIGIN&&request.destination==='image'&&
      url.pathname.startsWith('/storage/v1/object/public/gallery/')&&!url.search&&
      !request.headers.has('authorization')){
-    event.respondWith(galleryResponse(request).catch(()=>timedFetch(new Request(request,{credentials:'omit'}))));return;
+    event.respondWith(galleryResponse(request,work=>event.waitUntil(work)).catch(()=>timedFetch(new Request(request,{credentials:'omit'}))));return;
   }
   if(url.origin!==self.location.origin)return;
   // No API, signed media, player media, or arbitrary same-origin responses.
