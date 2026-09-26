@@ -72,3 +72,36 @@ test('failed initial request shows a warning after quiet startup',async()=>{
 });
 test('a transient score read retries without displaying an interruption',async()=>{const h=harness();await h.all();const read=h.c.boundedQuery;let calls=0;h.c.boundedQuery=(q,t)=>++calls===1?Promise.resolve({error:Error('network')}):read(q,t);await h.c.fetchPublicData(['fixtures','events']);assert.equal(calls,3);assert.equal(h.classes.has('show'),false);assert.equal(h.c.liveUpdatesAvailable(),true);});
 test('authorization failures are not retried or hidden',async()=>{const h=harness();let calls=0;h.c.boundedQuery=async()=>{calls++;return {status:403,error:Error('Forbidden')}};await h.c.fetchPublicData(['fixtures','events']);assert.equal(calls,2);assert.match(h.banner.textContent,/Updates interrupted/);assert.equal(h.c.liveUpdatesAvailable(),false);});
+
+test('age alone shows reconnecting while keeping scores marked stale',async()=>{
+ const h=harness();await h.all();h.advance(91000);h.c.showConnectionState();
+ assert.match(h.banner.textContent,/Reconnecting/);
+ assert.doesNotMatch(h.banner.textContent,/Updates interrupted/);
+ assert.match(h.banner.textContent,/Scores may be out of date/);
+ assert.equal(h.c.liveUpdatesAvailable(),false);
+ await h.all();assert.equal(h.classes.has('show'),false);
+});
+test('resume shows reconnecting before the pending read finishes',async()=>{
+ const h=harness();await h.all();const r=refreshHarness(h);h.advance(180000);
+ const read=h.c.boundedQuery;let release;const gate=new Promise(resolve=>release=resolve);
+ h.c.boundedQuery=async(q,t)=>{await gate;return read(q,t)};
+ const pending=r.handlers.visibilitychange();
+ assert.match(h.banner.textContent,/Reconnecting/);
+ assert.equal(h.c.liveUpdatesAvailable(),false);
+ release();await pending;assert.equal(h.classes.has('show'),false);
+});
+test('failed resume replaces reconnecting with interrupted and later recovers',async()=>{
+ const h=harness();await h.all();const r=refreshHarness(h);h.advance(180000);
+ h.failures.add('fixtures');await r.handlers.visibilitychange();
+ assert.match(h.banner.textContent,/Updates interrupted/);
+ assert.equal(h.c.liveUpdatesAvailable(),false);
+ h.failures.clear();await r.handlers.visibilitychange();
+ assert.equal(h.classes.has('show'),false);assert.equal(h.c.liveUpdatesAvailable(),true);
+});
+test('offline state and known failures are never softened to reconnecting',async()=>{
+ const h=harness();await h.all();h.c.navigator.onLine=false;h.c.showConnectionState();
+ assert.match(h.banner.textContent,/Updates interrupted/);
+ h.c.navigator.onLine=true;h.failures.add('news');await h.all();h.advance(91000);h.c.showConnectionState();
+ assert.match(h.banner.textContent,/Updates interrupted/);
+ assert.match(h.banner.textContent,/news: saved/);
+});
