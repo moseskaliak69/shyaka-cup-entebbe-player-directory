@@ -26,6 +26,15 @@
   function toggleMenu(force){const open=force??!moreSheet.classList.contains('open');moreSheet.classList.toggle('open',open);menu.setAttribute('aria-expanded',String(open));document.querySelector('[data-public-menu]')?.setAttribute('aria-expanded',String(open));}
   for(const button of moreSheet.querySelectorAll('[data-mobile-view]')){const labels={fixtures:'Fixtures',results:'Results',standings:'Standings',matchcentre:'Match Centre',stats:'Statistics',knockout:'Knockout',news:'News',sponsor:'Sponsor',gallery:'Highlights'};if(labels[button.dataset.mobileView])button.textContent=labels[button.dataset.mobileView];}
   menu.onclick=()=>toggleMenu();
+  // Return from menu pages to the list of tournament sections.
+  for(const view of ['fixtures','results','standings','matchcentre','stats','knockout','news','sponsor','gallery']){
+    const section=$('view-'+view);if(!section)continue;
+    const back=document.createElement('button');back.type='button';back.className='btn light';
+    back.textContent='← Back to Menu';back.style.margin='0 0 12px';
+    back.setAttribute('aria-controls','mobileMoreSheet');
+    back.onclick=()=>{toggleMenu(true);$('menuBack').focus();};section.prepend(back);
+  }
+  $('menuBack').onclick=()=>{toggleMenu(false);document.querySelector('[data-public-menu]')?.focus();};
   document.addEventListener('keydown',event=>{if(event.key==='Escape')toggleMenu(false);});
   const originalCheckSession = checkSession;
   checkSession = async function(){

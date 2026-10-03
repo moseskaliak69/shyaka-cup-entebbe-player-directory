@@ -422,6 +422,7 @@ body[data-public-view="home"]>footer{display:none}
 <div class="actions" style="margin-top:22px"><button class="btn red" id="logoutBtn">Log Out</button></div></div></div></div></div>
 <div class="gallery-lightbox" id="galleryLightbox" role="dialog" aria-modal="true" aria-label="Tournament photo gallery" aria-hidden="true"><div class="gallery-lightbox-inner"><div class="gallery-lightbox-toolbar"><span id="galleryLightboxCount" aria-live="polite"></span><button type="button" class="gallery-lightbox-close" id="galleryLightboxClose">Close</button></div><div id="galleryLoadStatus" role="status" aria-live="polite"></div><button type="button" class="btn light" id="galleryRetry" hidden>Retry photo</button><a id="galleryOriginal" target="_blank" rel="noopener" style="color:#fff">Download original</a><img id="galleryLightboxImg" alt="Tournament gallery photo" draggable="false"><div class="gallery-lightbox-caption" id="galleryLightboxCaption" aria-live="polite"></div><div class="gallery-lightbox-controls"><button type="button" id="galleryLightboxPrev" aria-label="Previous photo">← Previous</button><span>Swipe to browse</span><button type="button" id="galleryLightboxNext" aria-label="Next photo">Next →</button></div></div></div><div class="highlight-player-modal" id="highlightPlayerModal" aria-hidden="true"><div class="highlight-player-inner"><button class="highlight-player-close" id="highlightPlayerClose">Close</button><video id="highlightPlayer" controls playsinline preload="metadata"></video><div id="highlightPlayerCaption" style="color:#fff;font-weight:800;margin-top:9px;text-align:center"></div></div></div>
 <div class="mobile-more-sheet" id="mobileMoreSheet">
+<button type="button" id="menuBack" style="grid-column:1/-1;text-align:left" aria-label="Close menu and return to page">← Back</button>
 <button data-mobile-view="fixtures">Fixtures</button>
 <button data-mobile-view="results">🏁 Results</button><button data-mobile-view="standings">📊 Standings</button><button data-mobile-view="matchcentre">⚽ Match Centre</button><button data-mobile-view="stats">📈 Statistics</button><button data-mobile-view="knockout">🏆 Knockout</button><button data-mobile-view="news">📰 News</button><button data-mobile-view="sponsor">⭐ Sponsor</button><button data-mobile-view="gallery">🖼️ Gallery</button>
 </div>
@@ -1068,6 +1069,15 @@ try{
   function toggleMenu(force){const open=force??!moreSheet.classList.contains('open');moreSheet.classList.toggle('open',open);menu.setAttribute('aria-expanded',String(open));document.querySelector('[data-public-menu]')?.setAttribute('aria-expanded',String(open));}
   for(const button of moreSheet.querySelectorAll('[data-mobile-view]')){const labels={fixtures:'Fixtures',results:'Results',standings:'Standings',matchcentre:'Match Centre',stats:'Statistics',knockout:'Knockout',news:'News',sponsor:'Sponsor',gallery:'Highlights'};if(labels[button.dataset.mobileView])button.textContent=labels[button.dataset.mobileView];}
   menu.onclick=()=>toggleMenu();
+  // Return from menu pages to the list of tournament sections.
+  for(const view of ['fixtures','results','standings','matchcentre','stats','knockout','news','sponsor','gallery']){
+    const section=$('view-'+view);if(!section)continue;
+    const back=document.createElement('button');back.type='button';back.className='btn light';
+    back.textContent='← Back to Menu';back.style.margin='0 0 12px';
+    back.setAttribute('aria-controls','mobileMoreSheet');
+    back.onclick=()=>{toggleMenu(true);$('menuBack').focus();};section.prepend(back);
+  }
+  $('menuBack').onclick=()=>{toggleMenu(false);document.querySelector('[data-public-menu]')?.focus();};
   document.addEventListener('keydown',event=>{if(event.key==='Escape')toggleMenu(false);});
   const originalCheckSession = checkSession;
   checkSession = async function(){
