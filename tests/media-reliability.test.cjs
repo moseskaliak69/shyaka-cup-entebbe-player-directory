@@ -24,3 +24,24 @@ test('persistent photo failure offers a working manual retry',async()=>{const {c
 test('broken image renews its signed URL once',async()=>{const {c,nodes,calls}=context();const create=c.document.createElement;let images=0;c.document.createElement=tag=>{if(tag!=='img')return create(tag);const el=node(tag);const fails=++images===1;Object.defineProperty(el,'src',{set(v){this._src=v;queueMicrotask(()=>fails?this.onerror?.():this.onload?.())},get(){return this._src}});return el};await c.openPlayerProfile({name:'Daniel',photo:'photos/AC2PO15.png'});await new Promise(r=>setImmediate(r));assert.equal(calls(),2);assert.equal(nodes.profilePhotoWrap.children[0].src,'https://test.invalid/signed/2');});
 test('timed out signing releases slots and cannot cache a late URL',async()=>{const {c,calls}=context();c.boundedQuery=async()=>({error:Error('Request timed out')});await Promise.all(Array.from({length:8},(_,i)=>c.signedPlayerMedia('photos/'+i)));assert.equal(vm.runInContext('mediaActive',c),0);assert.equal(vm.runInContext('playerMediaCache.size',c),0);assert.equal(calls(),8);});
 test('closed profile discards a late signed photo',async()=>{const {c,nodes}=context();let finish;c.db.storage.from=()=>({createSignedUrl:()=>new Promise(r=>finish=r)});const pending=c.openPlayerProfile({photo:'photos/1'});c.closePlayerProfile();finish({data:{signedUrl:'late'}});await pending;assert.notEqual(nodes.profilePhotoWrap.children[0]?.src,'late');});
+
+ test('public photos and profiles work without exposing a licence button',async()=>{
+  const {c,nodes,calls}=context();c.approvedAdmin=false;
+  await c.openPlayerProfile({name:'Public player',photo:'photos/1',license:'licenses/private'});
+  assert.equal(nodes.profileName.textContent,'Public player');
+  assert.equal(nodes.profileLicenceCard.hidden,true);
+  assert.equal(nodes.profileLicence.children.length,0);
+  assert.equal(calls(),1);
+  await c.openLicenceViewer('licenses/private','Public player');
+  assert.equal(calls(),1);
+ });
+ test('public directory query excludes all private columns and ignores private fields',async()=>{
+  const {c}=context();c.approvedAdmin=false;const requests=[];
+  c.db.from=table=>({select:columns=>{requests.push([table,columns]);return {order:async()=>({data:table==='player_directory'?[{id:1,name:'Player',licence_url:'must-not-leak'}]:[]})}}});
+  vm.runInContext(region('async function loadOnline()','function currentTeams('),c);
+  await c.loadOnline();
+  assert.equal(c.players.length,1);assert.equal(c.players[0].license,'');
+  assert.ok(requests.some(([t])=>t==='player_directory'));
+  assert.ok(!requests.some(([t])=>['players','deleted_players','referee_reports'].includes(t)));
+  assert.ok(requests.every(([,cols])=>!cols.includes('licence')));
+ });

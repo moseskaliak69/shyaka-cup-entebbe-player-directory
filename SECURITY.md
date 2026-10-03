@@ -1,12 +1,15 @@
 # Shyaka Cup Security Baseline
 
-Last hardened: 2026-09-06
+Last updated: 2026-10-03
 
 ## Production rules
 
-- Player directory is available only to approved Supabase administrators.
+- Public player profiles are read from `player_directory`, a read-only projection with no licence, phone, birth date or emergency-contact columns.
+- Private player records remain accessible only to approved Supabase administrators.
+- Database triggers keep the projection synchronized and exclude deleted-player numbers.
 - Player photos and licences are stored in the private `player-files` bucket.
-- Player media is opened with short-lived signed URLs after admin authentication.
+- Only photos referenced by the public directory can be signed by visitors. Licences require approved admin authentication.
+- Player media uses short-lived signed URLs and is excluded from persistent offline caches.
 - Public gallery media uses the separate public `gallery` bucket.
 - Match highlights use the public `match-highlights` bucket and are limited to approved admin uploads.
 - No service-role or Supabase secret key belongs in browser code or this repository.

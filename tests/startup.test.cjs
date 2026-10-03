@@ -11,7 +11,7 @@ test('first HTML paint contains the current shell and keeps the legacy home hidd
  assert.match(initial,/<div id="publicHome">[\s\S]*Loading tournament/);
  assert.match(initial,/<h1>SHYAKA CUP<\/h1><small>ENTEBBE 2026<\/small>/);
  const nav=initial.match(/<nav[^>]*id="mobileBottomNav"[^>]*>([\s\S]*?)<\/nav>/)[1];
- assert.equal((nav.match(/<button /g)||[]).length,4);
+ assert.equal((nav.match(/<button /g)||[]).length,5);
  assert.doesNotMatch(nav,/>Table<|>More</);
  const presentation=fs.readFileSync(path.join(root,'public-design.js'),'utf8');
  assert.match(presentation,/const root = document.getElementById\('publicHome'\)/);

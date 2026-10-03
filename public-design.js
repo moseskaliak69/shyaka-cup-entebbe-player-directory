@@ -15,7 +15,7 @@
   const menu = document.querySelector('.public-menu');
   const publicMobileItems = [['home','house-fill','Home'],['fixtures','calendar4','Fixtures'],['livescores','broadcast','Live'],['gallery','play-circle','Highlights']];
   function renderMobileNav(){
-    const items=approvedAdmin?[...publicMobileItems,['players','people','Players']]:publicMobileItems;
+    const items=[...publicMobileItems,['players','people','Players']];
     $('mobileBottomNav').innerHTML=items.map(([view,img,label])=>`<button data-public-view="${view}">${icon(img)}<span>${label}</span></button>`).join('');
     $('mobileBottomNav').style.gridTemplateColumns=`repeat(${items.length},minmax(0,1fr))`;
   }
