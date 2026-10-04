@@ -20,7 +20,7 @@
  function unread(){const count=alerts.filter(a=>Date.parse(a.created_at)>seen).length;for(const n of document.querySelectorAll('[data-alert-count]')){n.textContent=count?String(count):'';n.hidden=!count;}}
  function render(){
   const grid=$('notificationList');grid.replaceChildren();
-  if(!alerts.length){grid.textContent='No new match-day or news alerts. Upcoming alerts will appear here.';return;}
+  if(!alerts.length){grid.textContent='No notifications yet.';return;}
   for(const a of alerts){
    const card=document.createElement('button');card.type='button';card.className='notification-item';
    const title=document.createElement('strong');title.textContent=a.title;
@@ -58,7 +58,7 @@
    const reg=await registration(),config=await api('config');
    const raw=atob(config.publicKey.replace(/-/g,'+').replace(/_/g,'/'));
    subscription=await reg.pushManager.getSubscription()||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:Uint8Array.from(raw,c=>c.charCodeAt(0))});
-   await storeSubscription();status.textContent='Phone notifications enabled. Match reminders arrive at 9:00 am Uganda time; new published news follows shortly after publication.';
+   await storeSubscription();status.textContent='Phone notifications are on.';
   }catch(e){status.textContent=e.message;if(subscription){try{await subscription.unsubscribe()}catch{}subscription=null;}}
   finally{$('enablePush').disabled=false;buttons();}
  };
@@ -68,7 +68,7 @@
  async function init(){
   buttons();
   if(!supported)status.textContent='Phone notifications are not supported here. On iPhone or iPad, add Shyaka Cup to your Home Screen and open it there. In-app alerts still work.';
-  else{try{subscription=await(await registration()).pushManager.getSubscription();buttons();status.textContent=subscription?'Phone notifications are enabled on this device.':'Enable phone notifications to receive alerts when the app is closed.';}catch(e){status.textContent=e.message;}}
+  else{try{subscription=await(await registration()).pushManager.getSubscription();buttons();status.textContent=subscription?'Phone notifications are on.':'Enable phone notifications to receive alerts when the app is closed.';}catch(e){status.textContent=e.message;}}
   await refresh();
  }
  navigator.serviceWorker?.addEventListener('message',e=>{if(e.data?.type==='SHYAKA_ALERT'){const url=new URL(e.data.url,location.origin);if(url.origin===location.origin)openAlert(url.searchParams.get('view'),url.searchParams.get('item'));}});
