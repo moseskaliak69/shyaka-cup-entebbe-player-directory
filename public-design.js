@@ -25,7 +25,7 @@
   function toggleMenu(force){const open=force??!moreSheet.classList.contains('open');moreSheet.classList.toggle('open',open);document.body.classList.toggle('menu-open',open);moreSheet.setAttribute('aria-hidden',String(!open));document.querySelector('[data-public-menu]')?.setAttribute('aria-expanded',String(open));}
   for(const button of moreSheet.querySelectorAll('[data-mobile-view]')){const labels={fixtures:'Fixtures',results:'Results',standings:'Standings',matchcentre:'Match Centre',stats:'Statistics',knockout:'Knockout',news:'News',sponsor:'Sponsor',gallery:'Highlights'};if(labels[button.dataset.mobileView])button.textContent=labels[button.dataset.mobileView];}
   // Return from menu pages to the list of tournament sections.
-  for(const view of ['fixtures','results','standings','matchcentre','stats','knockout','news','sponsor','gallery']){
+  for(const view of ['fixtures','results','standings','matchcentre','stats','knockout','news','sponsor','gallery','notifications']){
     const section=$('view-'+view);if(!section)continue;
     const back=document.createElement('button');back.type='button';back.className='btn light';
     back.textContent='← Back to Menu';back.style.margin='0 0 12px';

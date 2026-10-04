@@ -100,3 +100,5 @@ body.menu-open{overflow:hidden}
 body:not(.admin-open) .mobile-more-sheet>button{min-height:100px;font-size:17px;font-weight:700}
 body:not(.admin-open) .mobile-more-sheet #menuBack{padding:12px 20px;font-size:15px}
 @media(max-width:560px){body:not(.admin-open) .mobile-more-sheet{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}body:not(.admin-open) .mobile-more-sheet>button{min-height:78px;font-size:15px}}
+
+.notification-item{display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;border:1px solid var(--public-line);border-radius:12px;background:#0c3441;color:#fff;padding:18px;margin:12px 0;cursor:pointer}.notification-item small{color:#b3c8d0}#view-notifications input[type=checkbox]{width:auto;margin-right:8px}[data-alert-count]{background:#ffc21b;color:#071b35;border-radius:20px;padding:2px 6px;font-weight:800}

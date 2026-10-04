@@ -1,5 +1,5 @@
 // Only public app-shell assets and bounded public gallery images are cached.
-const CACHE = 'shyaka-cup-stadium-v17';
+const CACHE = 'shyaka-cup-stadium-v18';
 const PUBLIC_MEDIA_CACHE = 'shyaka-cup-public-media-v2';
 const OFFLINE_URL = '/index.html';
 const MEDIA_ORIGIN = 'https://tjabrrvfxlyqkhzhtnyb.supabase.co';
@@ -11,6 +11,7 @@ const ASSETS = [
     '/public-design.css',
     '/public-design.js',
     '/offline-cache.js',
+    '/notifications.js',
     '/gallery-images.js',
     '/vendor/supabase-2.116.0.min.js',
     '/supabase-config.js',
@@ -145,4 +146,25 @@ self.addEventListener('fetch', event => {
   const navigation=request.mode==='navigate'&&['/','/index.html'].includes(url.pathname);
   if(!navigation&&(!ASSETS.includes(url.pathname)||url.search))return;
   event.respondWith(shellResponse(request).catch(()=>timedFetch(request).catch(()=>new Response('Offline copy unavailable. Connect once to prepare this device.',{status:503}))));
+});
+
+// Push payloads contain only public tournament information, never player files.
+self.addEventListener('push',event=>{
+ let p={};try{p=event.data?.json()||{}}catch{}
+ const target=new URL(p.url||'/?view=notifications',self.location.origin);
+ const url=target.origin===self.location.origin?target.href:self.location.origin+'/?view=notifications';
+ event.waitUntil(self.registration.showNotification(String(p.title||'Shyaka Cup'),{
+  body:String(p.body||'A new tournament update is available.'),icon:'/icon-192.png',badge:'/icon-192.png',
+  tag:String(p.tag||'shyaka-update'),data:{url},renotify:false
+ }));
+});
+self.addEventListener('notificationclick',event=>{
+ event.notification.close();
+ event.waitUntil((async()=>{
+  const target=new URL(event.notification.data?.url||'/?view=notifications',self.location.origin);
+  const url=target.origin===self.location.origin?target.href:self.location.origin+'/?view=notifications';
+  const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+  const app=windows.find(c=>new URL(c.url).origin===self.location.origin);
+  if(app){await app.focus();app.postMessage({type:'SHYAKA_ALERT',url});}else await self.clients.openWindow(url);
+ })());
 });

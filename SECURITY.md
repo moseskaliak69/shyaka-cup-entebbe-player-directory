@@ -38,3 +38,10 @@ Supabase Auth leaked-password protection should be enabled in the Supabase dashb
 Private player media was removed from the current public branch. Older Git commits may still
 retain historical copies until repository history is fully purged. Treat a full Git history
 purge as a separate maintenance operation because it rewrites commit history.
+
+## Notifications
+
+Notification subscriber endpoints, encryption keys and VAPID private keys are
+service-role only. The dispatcher authenticates its Vault-backed secret. Device
+management requires an unguessable ownership token. The public alert feed contains
+only published match/news text; no player records or licences. See NOTIFICATIONS.md.
