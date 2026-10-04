@@ -12,7 +12,6 @@
   brand.nextElementSibling.textContent = 'ENTEBBE 2026';
   const galleryNav = document.querySelector('#nav [data-view="gallery"]'); galleryNav.textContent = 'Highlights';
   const icon = name => `<img class="public-icon" src="public-icons/${name}.svg" alt="">`;
-  const menu = document.querySelector('.public-menu');
   const publicMobileItems = [['home','house-fill','Home'],['menu','list','Menu'],['livescores','broadcast','Live'],['gallery','play-circle','Highlights']];
   function renderMobileNav(){
     const items=[...publicMobileItems,['players','people','Players']];
@@ -23,9 +22,8 @@
   const sponsor = () => '<div class="public-sponsor"><small>Supported by</small><button data-public-view="sponsor">Hon. Shyaka Stephen Gashaija</button></div>';
   for(const [id,label] of [['fixtureSearch','Search team or venue'],['fixtureDivision','Division'],['fixtureStatus','Stage'],['standingDivision','Standings division'],['matchCentreSelect','Select match']])$(id).setAttribute('aria-label',label);
   const moreSheet=$('mobileMoreSheet');moreSheet.setAttribute('aria-label','More tournament information');
-  function toggleMenu(force){const open=force??!moreSheet.classList.contains('open');moreSheet.classList.toggle('open',open);menu.setAttribute('aria-expanded',String(open));document.querySelector('[data-public-menu]')?.setAttribute('aria-expanded',String(open));}
+  function toggleMenu(force){const open=force??!moreSheet.classList.contains('open');moreSheet.classList.toggle('open',open);document.body.classList.toggle('menu-open',open);moreSheet.setAttribute('aria-hidden',String(!open));document.querySelector('[data-public-menu]')?.setAttribute('aria-expanded',String(open));}
   for(const button of moreSheet.querySelectorAll('[data-mobile-view]')){const labels={fixtures:'Fixtures',results:'Results',standings:'Standings',matchcentre:'Match Centre',stats:'Statistics',knockout:'Knockout',news:'News',sponsor:'Sponsor',gallery:'Highlights'};if(labels[button.dataset.mobileView])button.textContent=labels[button.dataset.mobileView];}
-  menu.onclick=()=>toggleMenu();
   // Return from menu pages to the list of tournament sections.
   for(const view of ['fixtures','results','standings','matchcentre','stats','knockout','news','sponsor','gallery']){
     const section=$('view-'+view);if(!section)continue;
