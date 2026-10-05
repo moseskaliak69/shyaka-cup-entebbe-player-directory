@@ -106,3 +106,14 @@ body:not(.admin-open) .mobile-more-sheet #menuBack{padding:12px 20px;font-size:1
 .notification-settings{border:1px solid var(--public-line);border-radius:12px;margin-bottom:18px;background:#0c3441;color:#fff}.notification-settings summary{padding:14px 16px;cursor:pointer;font-weight:700}.notification-settings-body{display:grid;gap:12px;padding:4px 16px 16px}.notification-settings-body .actions{justify-content:flex-start;margin-top:0}.notification-settings-body p{margin:0}.notification-settings-body small{color:#b3c8d0}
 
 .visitor-counts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}.visitor-counts strong{display:block;font-size:32px;color:var(--gold,#f5c451)}.visitor-counts span{display:block;margin-top:6px}@media(min-width:800px){.visitor-counts{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* Full-page admin workspace, with the Close control always reachable. */
+body:has(#adminModal.show){overflow:hidden}
+#adminModal{padding:0;overflow:hidden;z-index:1101}
+#adminModal.show{align-items:stretch;justify-content:stretch}
+#adminModal>.dialog{width:100%;height:100%;height:100dvh;max-width:none;max-height:none;border-radius:0;display:flex;flex-direction:column;overflow:hidden}
+#adminModal .dialog-head{flex-shrink:0;padding-top:max(17px,env(safe-area-inset-top));padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+#adminModal .dialog-head h3{font-size:clamp(16px,3.8vw,22px)}
+#adminModal .dialog-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:clamp(14px,2.5vw,32px);padding-bottom:max(24px,env(safe-area-inset-bottom))}
+#adminModal .admin-tabs{gap:8px}
+#adminModal .admin-tab{min-height:42px}
+body:has(#adminModal.show) .modal:not(#adminModal){z-index:1102}
