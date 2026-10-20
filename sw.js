@@ -1,5 +1,5 @@
 // Only public app-shell assets and bounded public gallery images are cached.
-const CACHE = 'shyaka-cup-stadium-v23';
+const CACHE = 'shyaka-cup-stadium-v24';
 const PUBLIC_MEDIA_CACHE = 'shyaka-cup-public-media-v2';
 const OFFLINE_URL = '/index.html';
 const MEDIA_ORIGIN = 'https://tjabrrvfxlyqkhzhtnyb.supabase.co';
@@ -119,12 +119,13 @@ async function galleryResponse(request,defer){
 async function shellResponse(request){
   const cache=await caches.open(CACHE);
   const navigation=request.mode==='navigate';
-  // Serve one installed release immediately; update checks run separately.
+  // Navigations must check the network first: cache-first HTML can permanently trap visitors on an obsolete broken app.
+  // Other static shell assets remain cache-first for offline speed.
   const saved=await cache.match(navigation?OFFLINE_URL:request);
-  if(saved)return saved;
+  if(!navigation&&saved)return saved;
   let response;
   try{
-    response=await timedFetch(request);
+    response=await timedFetch(navigation?new Request(request,{cache:'no-store'}):request);
     if(response.status<500){
       if(response.ok){try{await cache.put(navigation?OFFLINE_URL:request,response.clone())}catch(error){/* Storage may be full. */}}
       return response;
