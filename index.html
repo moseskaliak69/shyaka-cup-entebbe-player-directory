@@ -680,7 +680,7 @@ function calcStandings(div){
   h.p++;a.p++;h.gf+=hs;h.ga+=as;a.gf+=as;a.ga+=hs;
   if(hs>as){h.w++;a.l++;h.pts+=3}else if(hs<as){a.w++;h.l++;a.pts+=3}else{h.d++;a.d++;h.pts++;a.pts++}
  }
- // Disciplinary ruling for match #38 (Kitasa 0–3 Post Office): deduct 3 points from the winner.
+ // FFG ruling for match #38 (Kitasa 0–3 Post Office): remove the 3 winning points from Post Office.
  // Keep the recorded match result, goals, played/win/loss totals intact.
  const penalized=matches.find(f=>Number(f.match_no)===38&&f.status==='completed'&&f.home_score!=null&&f.away_score!=null);
  if(penalized){
@@ -691,7 +691,7 @@ function calcStandings(div){
  }
  return [...table.values()].sort((a,b)=>b.pts-a.pts||((b.gf-b.ga)-(a.gf-a.ga))||b.gf-a.gf||a.team.localeCompare(b.team));
 }
-function standingTeamLabel(x){return ShyakaTeams.label(x.team)+(x.deduction?` <span class="pill" title="3-point deduction for match #38">−${x.deduction} pts</span>`:'')+(x.live?` <span class="pill">${liveUpdatesAvailable()?'LIVE':'IN PROGRESS'}</span>`:'')}
+function standingTeamLabel(x){return ShyakaTeams.label(x.team)+(x.deduction?` <span class="pill" title="FFG — match #38 (3 points removed)">FFG −${x.deduction} pts</span>`:'')+(x.live?` <span class="pill">${liveUpdatesAvailable()?'LIVE':'IN PROGRESS'}</span>`:'')}
 function standingStatusText(div){
  const ongoing=standingFixtures(div).some(f=>f.status==='live');
  if(!liveUpdatesAvailable())return 'Updates paused — standings reflect the last received scores.'+(ongoing?' Includes provisional in-progress results.':'');
