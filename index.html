@@ -599,6 +599,13 @@ async function loadPlayerPhoto(img,force=false){const epoch=playerMediaEpoch;con
 function observePlayerPhotos(){photoObserver?.disconnect();const images=document.querySelectorAll('[data-player-photo]');if('IntersectionObserver' in window){photoObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){photoObserver.unobserve(entry.target);loadPlayerPhoto(entry.target)}}),{rootMargin:'100px'});images.forEach(img=>photoObserver.observe(img));}else if($('view-players').classList.contains('active'))images.forEach(img=>loadPlayerPhoto(img));}
 async function loadOnline(){
  const publicWork=fetchPublicData(Object.keys(PUBLIC_LABELS));
+ // Do not hold the public homepage behind the independent player-directory request.
+ // A slow player query must not delay fixtures, scores and the next-match card.
+ publicWork.then(()=>{
+  if(!shyakaAdminOpen()){
+   try{renderHome();renderFixtures();renderLiveScores();}catch(error){console.warn('Early public render failed:',error)}
+  }
+ }).catch(error=>console.warn('Public data refresh failed:',error));
  if(db){
   const wasAdmin=approvedAdmin;
   // Start public and admin queries together; render player rows before public queries finish.
