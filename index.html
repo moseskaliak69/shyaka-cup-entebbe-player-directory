@@ -1179,7 +1179,11 @@ try{
     }
     if(target.dataset.publicClip){const h=matchHighlights.find(h=>String(h.id)===target.dataset.publicClip&&h.published!==false);if(h)openMatchHighlight(h);}
   });
-  renderFixtures();drawHome();renderHighlights();showView(document.querySelector('.view.active')?.id.replace('view-','')||'home');
+  // Render the public home first so a failure in a secondary section cannot leave the whole app on its loading shell.
+  try{drawHome()}catch(error){console.error('Shyaka Cup home render failed:',error);root.innerHTML='<div class="public-content"><h2 class="public-page-title">Shyaka Cup Entebbe 2026</h2><p>Fixtures are temporarily unavailable. Please refresh shortly.</p></div>';}
+  try{renderFixtures()}catch(error){console.error('Shyaka Cup fixtures render failed:',error);}
+  try{renderHighlights()}catch(error){console.error('Shyaka Cup highlights render failed:',error);}
+  try{showView(document.querySelector('.view.active')?.id.replace('view-','')||'home')}catch(error){console.error('Shyaka Cup navigation setup failed:',error);}
 })();
 
 </script><script src="notifications.js"></script><script src="visitors.js"></script>
