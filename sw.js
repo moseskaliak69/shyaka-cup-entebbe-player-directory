@@ -1,5 +1,5 @@
 // Only public app-shell assets and bounded public gallery images are cached.
-const CACHE = 'shyaka-cup-stadium-v24';
+const CACHE = 'shyaka-cup-stadium-v25';
 const PUBLIC_MEDIA_CACHE = 'shyaka-cup-public-media-v2';
 const OFFLINE_URL = '/index.html';
 const MEDIA_ORIGIN = 'https://tjabrrvfxlyqkhzhtnyb.supabase.co';
@@ -52,7 +52,18 @@ const ASSETS = [
     '/official-sponsor-shyaka.jpg'
   ];
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS.map(path=>new Request(path,{cache:'reload'})))).then(()=>self.skipWaiting()));
+  event.waitUntil((async()=>{
+    const cache=await caches.open(CACHE);
+    // Cache the offline document first. One missing optional asset must never block an update.
+    const home=await fetch(new Request(OFFLINE_URL,{cache:'reload'}));
+    if(!home.ok)throw new Error('Offline app shell unavailable');
+    await cache.put(OFFLINE_URL,home);
+    await Promise.allSettled(ASSETS.filter(path=>path!==OFFLINE_URL).map(async path=>{
+      const response=await fetch(new Request(path,{cache:'reload'}));
+      if(response.ok)await cache.put(path,response);
+    }));
+    await self.skipWaiting();
+  })());
 });
 self.addEventListener('activate', event => {
   event.waitUntil((async()=>{
