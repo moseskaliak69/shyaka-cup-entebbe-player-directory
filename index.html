@@ -494,7 +494,9 @@ function showConnectionState(){
  if(checking&&cacheWritable){banner.classList.remove('show');banner.textContent='';return}
  // Age alone is not a failed request (for example, after a sleeping tab).
  const interrupted=navigator.onLine===false||missing.some(key=>publicFailures.has(key));
- const updateLabel=interrupted?'Updates interrupted':'Reconnecting… checking for updates';
+ // Ordinary background refreshes must not interrupt visitors.
+ if(!interrupted&&cacheWritable){banner.classList.remove('show');banner.textContent='';return}
+ const updateLabel=interrupted?'Updates interrupted':'Updates unavailable';
  const scoresWarning=missing.some(key=>key==='fixtures'||key==='events')?' Scores may be out of date.':'';
  banner.textContent=(checking?'':(missing.length?updateLabel+' — '+details+'.'+scoresWarning+' ':''))+(!cacheWritable?'This device cannot save an offline copy. ':'')+(navigator.onLine===false?'Administrator changes require a connection.':'');
  banner.classList.add('show');
