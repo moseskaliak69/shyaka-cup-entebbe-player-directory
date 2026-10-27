@@ -65,7 +65,7 @@ test('public updates continue during admin editing without rendering over forms'
 });
 
 test('initial offline visit still warns about unverified scores',()=>{
- const h=harness();h.c.navigator.onLine=false;h.c.showConnectionState();assert.equal(h.classes.has('show'),true);assert.match(h.banner.textContent,/Scores may be out of date/);
+ const h=harness();h.c.navigator.onLine=false;h.c.showConnectionState();assert.equal(h.classes.has('show'),true);assert.equal(h.c.liveUpdatesAvailable(),false);
 });
 test('failed initial request shows a warning after quiet startup',async()=>{
  const h=harness();h.c.showConnectionState();assert.equal(h.classes.has('show'),false);h.failures.add('fixtures');await h.all();assert.equal(h.classes.has('show'),true);assert.match(h.banner.textContent,/Updates interrupted/);
@@ -78,7 +78,7 @@ for(const delay of [3600001,86400001])test(`cache expiry after ${delay}ms is not
  h.advance(delay);h.c.expirePublicCache();h.c.showConnectionState();
  assert.equal(h.c.refereeReports.length,0);
  if(delay>86400000)assert.equal(h.c.fixtures.length,0);
- assert.match(h.banner.textContent,/Reconnecting/);
+ assert.equal(h.banner.textContent,'');assert.equal(h.classes.has('show'),false);
  assert.doesNotMatch(h.banner.textContent,/Updates interrupted/);
  assert.equal(h.c.liveUpdatesAvailable(),false);
  await h.all();assert.equal(h.classes.has('show'),false);assert.equal(h.c.liveUpdatesAvailable(),true);
@@ -90,20 +90,20 @@ test('expiry and unrelated refreshes cannot hide a real failed request',async()=
  assert.match(h.banner.textContent,/published reports: not verified/);
  h.failures.clear();await h.all();assert.equal(h.classes.has('show'),false);
 });
-test('age alone shows reconnecting while keeping scores marked stale',async()=>{
+test('age alone stays quiet while keeping scores marked stale',async()=>{
  const h=harness();await h.all();h.advance(91000);h.c.showConnectionState();
- assert.match(h.banner.textContent,/Reconnecting/);
+ assert.equal(h.banner.textContent,'');assert.equal(h.classes.has('show'),false);
  assert.doesNotMatch(h.banner.textContent,/Updates interrupted/);
- assert.match(h.banner.textContent,/Scores may be out of date/);
+ assert.equal(h.c.liveUpdatesAvailable(),false);
  assert.equal(h.c.liveUpdatesAvailable(),false);
  await h.all();assert.equal(h.classes.has('show'),false);
 });
-test('resume shows reconnecting before the pending read finishes',async()=>{
+test('resume stays quiet before the pending read finishes',async()=>{
  const h=harness();await h.all();const r=refreshHarness(h);h.advance(180000);
  const read=h.c.boundedQuery;let release;const gate=new Promise(resolve=>release=resolve);
  h.c.boundedQuery=async(q,t)=>{await gate;return read(q,t)};
  const pending=r.handlers.visibilitychange();
- assert.match(h.banner.textContent,/Reconnecting/);
+ assert.equal(h.banner.textContent,'');assert.equal(h.classes.has('show'),false);
  assert.equal(h.c.liveUpdatesAvailable(),false);
  release();await pending;assert.equal(h.classes.has('show'),false);
 });
